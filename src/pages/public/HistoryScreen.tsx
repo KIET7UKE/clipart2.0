@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
-  SafeAreaView,
   Share,
+  RefreshControl,
 } from 'react-native';
 import { aiService, ClipartHistory } from '../../services/aiService';
 import { useSelector } from 'react-redux';
@@ -17,16 +17,22 @@ import { RootState } from '../../redux/store/store';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import { ChevronLeft, RefreshCw, Share2, Palette } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RootStackParamList } from '../../navigation/rootStackParamList';
+import { StackNavigationProp } from '@react-navigation/stack';
+
+import { Colors } from '../../utils/theme/DesignSystem';
 
 const { width } = Dimensions.get('window');
 const COLUMN_COUNT = 2;
 const ITEM_WIDTH = (width - 48) / COLUMN_COUNT;
 
 const HistoryScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const [history, setHistory] = useState<ClipartHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const user = useSelector((state: RootState) => state.auth.user);
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   // Use fixed user ID for demo if no user object exists
   const userId = user?.id || 'demo_user_123';
@@ -76,21 +82,17 @@ const HistoryScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <LinearGradient colors={['#0F172A', '#1E293B']} style={styles.gradient}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <ChevronLeft size={30} color="#FFFFFF" />
-          </TouchableOpacity>
+    <View style={styles.container}>
+      <LinearGradient colors={[Colors.background, Colors.surfaceContainer]} style={styles.gradient}>
+        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+          <View style={styles.headerSidePlaceholder} />
           <Text style={styles.title}>My Creations</Text>
-          <TouchableOpacity onPress={fetchHistory} style={styles.refreshButton}>
-            <RefreshCw size={24} color="#38BDF8" />
-          </TouchableOpacity>
+          <View style={styles.headerSidePlaceholder} />
         </View>
 
-        {loading ? (
+        {loading && history.length === 0 ? (
           <View style={styles.emptyState}>
-            <ActivityIndicator size="large" color="#38BDF8" />
+            <ActivityIndicator size="large" color={Colors.primary} />
             <Text style={styles.emptyText}>Loading your art gallery...</Text>
           </View>
         ) : history.length > 0 ? (
@@ -99,8 +101,19 @@ const HistoryScreen: React.FC = () => {
             renderItem={renderItem}
             keyExtractor={(item) => item._id}
             numColumns={COLUMN_COUNT}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[
+              styles.listContent,
+              { paddingBottom: insets.bottom + 100 } // account for tab bar
+            ]}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={loading && history.length > 0}
+                onRefresh={fetchHistory}
+                tintColor={Colors.primary}
+                colors={[Colors.primary]}
+              />
+            }
           />
         ) : (
           <View style={styles.emptyState}>
@@ -108,21 +121,21 @@ const HistoryScreen: React.FC = () => {
             <Text style={styles.emptyText}>No creations yet.</Text>
             <TouchableOpacity
               style={styles.createButton}
-              onPress={() => navigation.navigate('HomeScreen')}
+              onPress={() => navigation.navigate('CreateArtScreen')}
             >
               <Text style={styles.createButtonText}>Start Creating</Text>
             </TouchableOpacity>
           </View>
         )}
       </LinearGradient>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: Colors.background,
   },
   gradient: {
     flex: 1,
@@ -134,11 +147,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  backButton: {
+  headerSidePlaceholder: {
     width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   refreshButton: {
     padding: 8,
@@ -183,7 +193,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   styleLabel: {
-    color: '#38BDF8',
+    color: Colors.primary,
     fontSize: 10,
     fontWeight: 'bold',
   },
@@ -205,7 +215,7 @@ const styles = StyleSheet.create({
   },
   createButton: {
     marginTop: 24,
-    backgroundColor: '#38BDF8',
+    backgroundColor: Colors.primary,
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 12,

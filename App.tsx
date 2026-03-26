@@ -21,7 +21,7 @@ function App(): React.JSX.Element {
             backgroundColor={'#0E0E0E'} 
           />
           <NavigationContainer>
-            <Stack.Navigator initialRouteName="HomeScreen">
+            <Stack.Navigator initialRouteName="MainTabs">
               {AppRoutes?.map((route, index) => (
                 <Stack.Screen
                   key={index}

@@ -23,7 +23,7 @@ const { width } = Dimensions.get('window');
 
 type HomeScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
-  'HomeScreen'
+  'MainTabs'
 >;
 
 const HomeScreen: React.FC = () => {
@@ -49,12 +49,6 @@ const HomeScreen: React.FC = () => {
           </View>
           <Text style={styles.appName}>Clipart <Text style={styles.accentText}>AI</Text></Text>
         </View>
-        <TouchableOpacity 
-          style={styles.historyButton} 
-          onPress={() => navigation.navigate('HistoryScreen')}
-        >
-          <Clock color={Colors.text} size={24} />
-        </TouchableOpacity>
       </Animated.View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
