@@ -40,26 +40,32 @@ const HomeScreen: React.FC = () => {
         backgroundColor="transparent"
       />
 
+      {/* Fixed Top Bar */}
+      <Animated.View entering={FadeIn.duration(800)} style={styles.topBar}>
+        <View style={styles.sparkIcon}>
+          <Sparkles color={Colors.primary} size={20} />
+        </View>
+        <Text style={styles.appName}>Clipart <Text style={styles.accentText}>AI</Text></Text>
+      </Animated.View>
+
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Subtle Glow Backdrop */}
         <View style={styles.glowBackdrop} />
-        
+
         <View style={styles.container}>
-          {/* Top Bar / App Identity */}
-          <Animated.View entering={FadeIn.duration(800)} style={styles.topBar}>
-            <View style={styles.sparkIcon}>
-              <Sparkles color={Colors.primary} size={20} />
-            </View>
-            <Text style={styles.appName}>Clipart <Text style={styles.accentText}>AI</Text></Text>
-          </Animated.View>
 
           {/* Hero Section */}
           <View style={styles.heroSection}>
+            <Animated.View entering={FadeInDown.delay(200).duration(800)} style={styles.trendingBadge}>
+              <Sparkles color={Colors.primary} size={12} fill={Colors.primary} />
+              <Text style={styles.trendingText}>NEW: V3 ENGINE LIVE</Text>
+            </Animated.View>
+
             <Animated.Text entering={FadeInDown.delay(200).duration(800)} style={styles.heroTitle}>
-              Turn your photos into stunning Clipart with AI
+              Turn your photos into stunning <Text style={styles.accentText}>Clipart</Text>
             </Animated.Text>
             <Animated.Text entering={FadeInDown.delay(400).duration(800)} style={styles.heroSubtitle}>
-              Fast, high-quality, and creative. Experience the power of AI artistry.
+              Experience the next-gen AI artistry. Fast, high-quality, and creative.
             </Animated.Text>
 
             {/* Glowing CTA Button */}
@@ -69,16 +75,18 @@ const HomeScreen: React.FC = () => {
                 onPress={handleStartGenerating}
               >
                 <LinearGradient
-                  colors={Gradients.primary}
+                  colors={['#D095FF', '#9E4DFF']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.ctaGradient}
                 >
                   <Text style={styles.ctaButtonText}>Start Generating</Text>
-                  <Zap color="#000" size={18} style={{ marginLeft: 8 }} />
+                  <View style={styles.zapIcon}>
+                    <Zap color="#fff" size={18} fill="#fff" />
+                  </View>
                 </LinearGradient>
               </AnimatedButton>
-              <View style={styles.buttonGlow} />
+              <View style={styles.buttonShadow} />
             </Animated.View>
           </View>
 
@@ -87,13 +95,13 @@ const HomeScreen: React.FC = () => {
 
           {/* Tips Section */}
           <Animated.View entering={FadeInDown.delay(800).duration(800)} style={styles.tipsSection}>
-             <View style={styles.tipsCard}>
-                <View style={styles.tipHeader}>
-                   <Wand color={Colors.primary} size={14} style={{ marginRight: 6 }} />
-                   <Text style={styles.tipsTitle}>Pro Tip</Text>
-                </View>
-                <Text style={styles.tipsDesc}>Upload high-contrast photos for the best AI results.</Text>
-             </View>
+            <View style={styles.tipsCard}>
+              <View style={styles.tipHeader}>
+                <Wand color={Colors.primary} size={14} style={{ marginRight: 6 }} />
+                <Text style={styles.tipsTitle}>Pro Tip</Text>
+              </View>
+              <Text style={styles.tipsDesc}>Upload high-contrast photos for the best AI results.</Text>
+            </View>
           </Animated.View>
         </View>
       </ScrollView>
@@ -120,32 +128,52 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    backgroundColor: Colors.background, // Match background for a seamless look
   },
   sparkIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     backgroundColor: Colors.surfaceContainerHigh,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
-  appName: { fontSize: 22, fontWeight: 'bold', color: Colors.text },
+  appName: { fontSize: 24, fontWeight: 'bold', color: Colors.text, letterSpacing: -0.5 },
   accentText: { color: Colors.primary },
-  
+
   heroSection: {
     paddingHorizontal: Layout.spacing.lg,
-    paddingTop: Layout.spacing.xxl,
+    paddingTop: Layout.spacing.xl,
     paddingBottom: Layout.spacing.xl,
     alignItems: 'center',
   },
+  trendingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(208, 149, 255, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 20,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(208, 149, 255, 0.2)',
+  },
+  trendingText: {
+    color: Colors.primary,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
   heroTitle: {
-    fontSize: 40,
+    fontSize: 42,
     fontWeight: '900',
     color: Colors.text,
     textAlign: 'center',
-    lineHeight: 48,
+    lineHeight: 50,
+    letterSpacing: -1,
   },
   heroSubtitle: {
     fontSize: 16,
@@ -155,7 +183,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     maxWidth: '85%',
   },
-  
+
   buttonWrapper: {
     marginTop: 40,
     width: '100%',
@@ -163,9 +191,14 @@ const styles = StyleSheet.create({
   },
   ctaButton: {
     width: '85%',
-    height: 60,
-    borderRadius: 30,
+    height: 64,
+    borderRadius: 32,
     overflow: 'hidden',
+    elevation: 8,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
   },
   ctaGradient: {
     width: '100%',
@@ -173,35 +206,95 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 12,
   },
   ctaButtonText: {
-    color: '#000',
+    color: '#fff',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
-  buttonGlow: {
+  zapIcon: {
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonShadow: {
     position: 'absolute',
-    width: '75%',
-    height: 30,
-    bottom: -10,
+    width: '70%',
+    height: 20,
+    bottom: -5,
     backgroundColor: Colors.primary,
-    opacity: 0.3,
-    borderRadius: 20,
+    opacity: 0.1,
+    borderRadius: 30,
     zIndex: -1,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 1,
+    shadowRadius: 20,
+    elevation: 10,
   },
-  
+
   tipsSection: {
     paddingHorizontal: Layout.spacing.lg,
     marginTop: Layout.spacing.lg,
   },
+  recentSection: {
+    marginTop: Layout.spacing.lg,
+    paddingHorizontal: Layout.spacing.lg,
+  },
+  sectionHeader: {
+    marginBottom: Layout.spacing.md,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.text,
+  },
+  recentList: {
+    paddingRight: Layout.spacing.lg,
+    gap: 12,
+  },
+  recentItem: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.surfaceContainerHigh,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  recentImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 32,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  recentBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.background,
+  },
   tipsCard: {
     backgroundColor: Colors.surfaceContainerLow,
     padding: Layout.spacing.lg,
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)',
   },
-  tipHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  tipHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   tipsTitle: {
     fontSize: 14,
     color: Colors.primary,

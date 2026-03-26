@@ -13,6 +13,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { 
+  ArrowLeft, 
+  Share2, 
+  Download, 
+  Sparkles,
+  ChevronLeft 
+} from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/rootStackParamList';
 import { Colors, Layout, Gradients } from '../../utils/theme/DesignSystem';
 import { AnimatedButton } from '../../components/AnimatedButton';
@@ -46,7 +53,7 @@ const ResultScreen: React.FC = () => {
     <SafeAreaView style={styles.safeContainer}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-           <Text style={styles.backEmoji}>←</Text>
+           <ChevronLeft color={Colors.text} size={28} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Your Masterpiece</Text>
         <View style={{ width: 44 }} />
@@ -75,7 +82,7 @@ const ResultScreen: React.FC = () => {
         <View style={styles.actionRow}>
            <AnimatedButton style={styles.shareBtn} onPress={handleShare}>
               <View style={styles.btnContent}>
-                 <Text style={styles.btnEmoji}>📤</Text>
+                 <Share2 color={Colors.text} size={20} />
                  <Text style={styles.btnText}>Share</Text>
               </View>
            </AnimatedButton>
@@ -87,7 +94,7 @@ const ResultScreen: React.FC = () => {
                 end={{ x: 1, y: 0 }}
                 style={styles.downloadGradient}
               >
-                 <Text style={styles.btnEmoji}>💾</Text>
+                 <Download color="#000" size={20} />
                  <Text style={styles.downloadText}>Download</Text>
               </LinearGradient>
            </AnimatedButton>
@@ -119,7 +126,8 @@ const ResultScreen: React.FC = () => {
           style={styles.restartBtn}
           onPress={() => navigation.navigate('HomeScreen')}
         >
-           <Text style={styles.restartText}>Create New Magic ✨</Text>
+           <Sparkles color={Colors.primary} size={18} style={{ marginRight: 8 }} />
+           <Text style={styles.restartText}>Create New Magic</Text>
         </TouchableOpacity>
         
         <View style={{ height: 40 }} />
