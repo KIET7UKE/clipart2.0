@@ -1,191 +1,190 @@
-import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Modal, Image, Share } from 'react-native';
+import React, { useState } from 'react';
+import { 
+  StyleSheet, 
+  View, 
+  Text, 
+  Image, 
+  Dimensions, 
+  ScrollView,
+  TouchableOpacity,
+  Alert
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { THEME } from '../../utils/constant/theme';
-import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import LinearGradient from 'react-native-linear-gradient';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { RootStackParamList } from '../../navigation/rootStackParamList';
+import { Colors, Layout, Gradients } from '../../utils/theme/DesignSystem';
+import { AnimatedButton } from '../../components/AnimatedButton';
 import { imageService } from '../../services/imageService';
+import { CLIPART_STYLES } from '../../utils/constant/styles';
 
-type ResultScreenRoute = RouteProp<RootStackParamList, 'ResultScreen'>;
+const { width } = Dimensions.get('window');
+
+type ResultScreenRouteProp = RouteProp<RootStackParamList, 'ResultScreen'>;
 
 const ResultScreen: React.FC = () => {
-  const route = useRoute<ResultScreenRoute>();
-  const navigation = useNavigation();
-  const { images, prompt } = route.params;
+  const route = useRoute<ResultScreenRouteProp>();
+  const navigation = useNavigation<any>();
+  const { images } = route.params;
 
-  const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
-  const [saving, setSaving] = React.useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showOriginal, setShowOriginal] = useState(false);
 
-  const handleSave = async (uri: string) => {
-    try {
-      setSaving(true);
-      const styleName = 'downloaded';
-      const success = await imageService.downloadImage(uri, styleName);
-      if (!success) {
-        Alert.alert('Error', 'Failed to save image.');
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Something went wrong while saving.');
-    } finally {
-      setSaving(false);
-    }
+  const currentImage = images[currentIndex];
+
+  const handleDownload = async () => {
+    const success = await imageService.downloadImage(currentImage, `Clipart_${currentIndex}`);
+    if (success) Alert.alert('Success', 'Magic art saved to your gallery!');
   };
 
-  const handleShare = async (uri: string) => {
-    try {
-       await imageService.shareImage(uri);
-    } catch (err) {
-       console.error('Share Error:', err);
-    }
+  const handleShare = async () => {
+    await imageService.shareImage(currentImage);
   };
 
   return (
     <SafeAreaView style={styles.safeContainer}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.label}>Results for:</Text>
-          <Text style={styles.prompt} numberOfLines={2}>"{prompt}"</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+           <Text style={styles.backEmoji}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Your Masterpiece</Text>
+        <View style={{ width: 44 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Main Preview */}
+        <Animated.View entering={FadeIn.duration(800)} style={styles.previewCard}>
+           <Image 
+             source={{ uri: currentImage }} 
+             style={styles.mainImage} 
+             resizeMode="cover"
+           />
+           
+           {/* Before/After Toggle Concept */}
+           <TouchableOpacity 
+             activeOpacity={0.8}
+             onPress={() => setShowOriginal(!showOriginal)}
+             style={styles.toggleBadge}
+           >
+              <Text style={styles.toggleText}>{showOriginal ? 'Reviewing...' : 'AI Clipart'}</Text>
+           </TouchableOpacity>
+        </Animated.View>
+
+        {/* Action Buttons */}
+        <View style={styles.actionRow}>
+           <AnimatedButton style={styles.shareBtn} onPress={handleShare}>
+              <View style={styles.btnContent}>
+                 <Text style={styles.btnEmoji}>📤</Text>
+                 <Text style={styles.btnText}>Share</Text>
+              </View>
+           </AnimatedButton>
+           
+           <AnimatedButton style={styles.downloadBtn} onPress={handleDownload}>
+              <LinearGradient 
+                colors={Gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.downloadGradient}
+              >
+                 <Text style={styles.btnEmoji}>💾</Text>
+                 <Text style={styles.downloadText}>Download</Text>
+              </LinearGradient>
+           </AnimatedButton>
         </View>
 
-        <View style={{ flex: 1 }}>
-          <ScrollView contentContainerStyle={{ padding: 10 }}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-              {images.map((uri: string, idx: number) => (
+        {/* Alternative Styles Grid */}
+        <View style={styles.section}>
+           <Text style={styles.sectionTitle}>More Variations</Text>
+           <View style={styles.altGrid}>
+              {images.map((img, idx) => (
                 <TouchableOpacity 
-                  key={idx} 
-                  onPress={() => setSelectedImage(uri)}
-                  style={{ width: '48%', marginBottom: 15 }}
+                  key={idx}
+                  onPress={() => {
+                    setCurrentIndex(idx);
+                    setShowOriginal(false);
+                  }}
+                  style={[styles.altCard, currentIndex === idx && styles.altCardSelected]}
                 >
-                  <Image source={{ uri }} style={{ width: '100%', height: 150, borderRadius: 12 }} />
+                   <Image source={{ uri: img }} style={styles.altImage} />
+                   <View style={styles.altOverlay}>
+                      <Text style={styles.altLabel}>{CLIPART_STYLES[idx]?.label || 'Clipart'}</Text>
+                   </View>
                 </TouchableOpacity>
               ))}
-            </View>
-          </ScrollView>
+           </View>
         </View>
 
-        {/* Action Modal */}
-        <Modal
-          visible={!!selectedImage}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setSelectedImage(null)}
-        >
-          <View style={styles.modalBg}>
-            <TouchableOpacity style={styles.modalOverlay} onPress={() => setSelectedImage(null)} />
-            <View style={styles.modalContent}>
-              {selectedImage && (
-                <>
-                  <Image source={{ uri: selectedImage }} style={styles.modalImage} resizeMode="contain" />
-                  <View style={styles.modalActions}>
-                    <TouchableOpacity 
-                      style={styles.modalButton} 
-                      onPress={() => handleSave(selectedImage)}
-                      disabled={saving}
-                    >
-                      {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalButtonText}>Download</Text>}
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.modalButton, styles.modalButtonSecondary]} 
-                      onPress={() => handleShare(selectedImage)}
-                    >
-                      <Text style={styles.modalButtonText}>Share</Text>
-                    </TouchableOpacity>
-                  </View>
-                </>
-              )}
-            </View>
-          </View>
-        </Modal>
-
         <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          style={styles.restartBtn}
+          onPress={() => navigation.navigate('HomeScreen')}
         >
-          <Text style={styles.backButtonText}>Generate More</Text>
+           <Text style={styles.restartText}>Create New Magic ✨</Text>
         </TouchableOpacity>
-      </View>
+        
+        <View style={{ height: 40 }} />
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeContainer: {
-    flex: 1,
-    backgroundColor: THEME.colors.background,
-  },
-  container: {
-    flex: 1,
-    padding: THEME.spacing.md,
-  },
+  safeContainer: { flex: 1, backgroundColor: Colors.background },
   header: {
-    marginBottom: THEME.spacing.md,
-  },
-  label: {
-    color: THEME.colors.text.secondary,
-    fontSize: 14,
-  },
-  prompt: {
-    color: THEME.colors.text.primary,
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
-  backButton: {
-    marginVertical: THEME.spacing.lg,
-    alignSelf: 'center',
-    padding: THEME.spacing.md,
-  },
-  backButtonText: {
-    color: THEME.colors.accent,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  modalBg: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  modalContent: {
-    width: '90%',
-    backgroundColor: THEME.colors.card,
-    borderRadius: THEME.borderRadius.lg,
-    padding: THEME.spacing.lg,
-    alignItems: 'center',
-  },
-  modalImage: {
-    width: '100%',
-    height: 300,
-    borderRadius: THEME.borderRadius.md,
-  },
-  modalActions: {
+    height: 60,
     flexDirection: 'row',
-    marginTop: THEME.spacing.xl,
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  modalButton: {
-    flex: 0.48,
-    backgroundColor: THEME.colors.accent,
-    height: 48,
-    borderRadius: THEME.borderRadius.md,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Layout.spacing.md,
   },
-  modalButtonSecondary: {
-    backgroundColor: THEME.colors.border,
+  backButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  backEmoji: { fontSize: 24, color: Colors.text },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.text },
+  
+  scrollContent: { padding: Layout.spacing.lg },
+  previewCard: {
+    width: '100%',
+    height: width * 1.1,
+    borderRadius: 32,
+    backgroundColor: Colors.surfaceContainerHigh,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
   },
-  modalButtonText: {
-    color: THEME.colors.text.primary,
-    fontWeight: 'bold',
+  mainImage: { width: '100%', height: '100%' },
+  toggleBadge: {
+    position: 'absolute',
+    bottom: 20,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
+  toggleText: { color: Colors.text, fontSize: 12, fontWeight: 'bold' },
+  
+  actionRow: { flexDirection: 'row', marginTop: Layout.spacing.xl, gap: 12 },
+  shareBtn: { flex: 1, height: 56, backgroundColor: Colors.surfaceContainerHigh, borderRadius: 28, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  downloadBtn: { flex: 1.5, height: 56, borderRadius: 28, overflow: 'hidden' },
+  downloadGradient: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  btnContent: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  btnEmoji: { fontSize: 18 },
+  btnText: { color: Colors.text, fontWeight: 'bold' },
+  downloadText: { color: '#000', fontWeight: 'bold' },
+  
+  section: { marginTop: Layout.spacing.xxl },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.text, marginBottom: 16 },
+  altGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  altCard: { width: (width - Layout.spacing.lg * 2 - 12) / 2, height: width * 0.45, borderRadius: 20, overflow: 'hidden', backgroundColor: Colors.surfaceContainerHigh },
+  altCardSelected: { borderWidth: 2, borderColor: Colors.primary },
+  altImage: { width: '100%', height: '100%' },
+  altOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 8, backgroundColor: 'rgba(0,0,0,0.5)' },
+  altLabel: { color: Colors.text, fontSize: 11, fontWeight: 'bold' },
+  
+  restartBtn: { marginTop: 32, width: '100%', height: 56, borderRadius: 28, backgroundColor: Colors.surfaceContainerLow, justifyContent: 'center', alignItems: 'center', borderStyle: 'dashed', borderWidth: 1, borderColor: Colors.primary },
+  restartText: { color: Colors.primary, fontWeight: 'bold', fontSize: 16 },
 });
 
 export default ResultScreen;

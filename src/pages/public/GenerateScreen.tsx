@@ -6,7 +6,8 @@ import {
   Image, 
   Alert, 
   Dimensions,
-  StatusBar
+  StatusBar,
+  TouchableOpacity
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
@@ -17,12 +18,14 @@ import Animated, {
   withTiming, 
   useSharedValue 
 } from 'react-native-reanimated';
+import LinearGradient from 'react-native-linear-gradient';
 import { RootStackParamList } from '../../navigation/rootStackParamList';
 import { useGenerate } from '../../hooks/useGenerate';
 import { ResultGrid } from '../../components/ResultGrid';
 import { imageService } from '../../services/imageService';
 import { CLIPART_STYLES } from '../../utils/constant/styles';
 import { AnimatedButton } from '../../components/AnimatedButton';
+import { Colors, Layout, Gradients } from '../../utils/theme/DesignSystem';
 
 const { width } = Dimensions.get('window');
 
@@ -31,7 +34,7 @@ type GenerateScreenRouteProp = RouteProp<RootStackParamList, 'GenerateScreen'>;
 const GenerateScreen: React.FC = () => {
   const route = useRoute<GenerateScreenRouteProp>();
   const navigation = useNavigation();
-  const { selectedImage } = route.params;
+  const { selectedImage, styles: selectedStyleIds } = route.params;
   
   const { results, loading, generateAll } = useGenerate();
   const [showSplash, setShowSplash] = useState(true);
@@ -40,18 +43,17 @@ const GenerateScreen: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
-      if (selectedImage) generateAll(selectedImage);
+      if (selectedImage) generateAll(selectedImage, selectedStyleIds);
     }, 1200);
     return () => clearTimeout(timer);
-  }, [selectedImage]);
+  }, [selectedImage, selectedStyleIds]);
 
   const completedCount = useMemo(() => {
     return Object.values(loading).filter(l => !l).length;
   }, [loading]);
 
-  const progressPercent = (completedCount / CLIPART_STYLES.length) * 100;
+  const progressPercent = (completedCount / selectedStyleIds.length) * 100;
   
-  // 2. Animated Progress Bar Width
   const progressWidth = useSharedValue(0);
   useEffect(() => {
     if (!showSplash) {
@@ -77,15 +79,30 @@ const GenerateScreen: React.FC = () => {
      await imageService.shareImage(successfulImages[0]);
   };
 
+  const handleGoBack = () => {
+     if (completedCount < CLIPART_STYLES.length) {
+        Alert.alert(
+          'Abort Generation?',
+          'Generating art takes time. Are you sure you want to go back?',
+          [
+            { text: 'Wait', style: 'cancel' },
+            { text: 'Yes, Leave', onPress: () => navigation.goBack(), style: 'destructive' }
+          ]
+        );
+     } else {
+        navigation.goBack();
+     }
+  };
+
   if (showSplash) {
     return (
       <SafeAreaView style={styles.splashContainer}>
         <Animated.View exiting={FadeOut.duration(500)} style={styles.splashContent}>
           <View style={styles.logoBadge}>
-             <Text style={styles.logoEmoji}>✨</Text>
+             <Text style={styles.logoEmoji}>🛸</Text>
           </View>
-          <Text style={styles.splashTitle}>Preparing your styles...</Text>
-          <Text style={styles.splashSubtitle}>Wait a moment while we set up the AI models</Text>
+          <Text style={styles.splashTitle}>Brewing Your Art...</Text>
+          <Text style={styles.splashSubtitle}>Wait a moment while AI builds your styles</Text>
         </Animated.View>
       </SafeAreaView>
     );
@@ -95,26 +112,27 @@ const GenerateScreen: React.FC = () => {
     <SafeAreaView style={styles.safeContainer}>
       <StatusBar barStyle="light-content" />
       
-      {/* 3. Custom Header with Progress Bar */}
+      {/* Premium Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <AnimatedButton style={styles.backButton} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
              <Text style={styles.backIcon}>←</Text>
-          </AnimatedButton>
+          </TouchableOpacity>
           
           <View style={styles.headerTitleContainer}>
-             <Text style={styles.headerTitle}>Your Cliparts</Text>
+             <Text style={styles.headerTitle}>Collective Art</Text>
              <Text style={styles.progressText}>
                 {completedCount} of {CLIPART_STYLES.length} styles ready
              </Text>
           </View>
 
           {selectedImage && (
-            <Image source={{ uri: selectedImage }} style={styles.originalImage} resizeMode="cover" />
+            <View style={styles.originalWrapper}>
+               <Image source={{ uri: `data:image/jpeg;base64,${selectedImage}` }} style={styles.originalImage} resizeMode="cover" />
+            </View>
           )}
         </View>
 
-        {/* 4. Animated Progress Bar */}
         <View style={styles.progressBarBg}>
            <Animated.View style={[styles.progressBarFill, animatedProgressStyle]} />
         </View>
@@ -125,19 +143,27 @@ const GenerateScreen: React.FC = () => {
           results={results} 
           loading={loading} 
           onRetry={(style) => {
-             Alert.alert('Retrying', `Generating ${style.label} again...`);
-             // Implementation for retry would go here
+             // Logic to re-trigger generation for a specific style could go here
+             Alert.alert('Retrying', `Regenerating ${style.label}...`);
           }} 
         />
       </Animated.View>
 
+      {/* Glassmorphic Bottom Bar */}
       <View style={styles.bottomBar}>
         <AnimatedButton style={[styles.actionButton, styles.secondaryButton]} onPress={handleShareAll}>
-          <Text style={styles.buttonText}>Share</Text>
+          <Text style={styles.buttonText}>Share Batch</Text>
         </AnimatedButton>
 
         <AnimatedButton style={[styles.actionButton, styles.primaryButton]} onPress={handleDownloadAll}>
-          <Text style={styles.buttonText}>Download All</Text>
+          <LinearGradient
+            colors={Gradients.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.gradientBtn}
+          >
+            <Text style={styles.buttonTextDark}>Download All</Text>
+          </LinearGradient>
         </AnimatedButton>
       </View>
     </SafeAreaView>
@@ -145,29 +171,62 @@ const GenerateScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  safeContainer: { flex: 1, backgroundColor: '#0D0D0D' },
-  splashContainer: { flex: 1, backgroundColor: '#0D0D0D', justifyContent: 'center', alignItems: 'center' },
+  safeContainer: { flex: 1, backgroundColor: Colors.background },
+  splashContainer: { flex: 1, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' },
   splashContent: { alignItems: 'center' },
-  logoBadge: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#7C3AED', justifyContent: 'center', alignItems: 'center', marginBottom: 24, shadowColor: '#7C3AED', shadowOpacity: 0.5, shadowRadius: 20 },
-  logoEmoji: { fontSize: 44 },
-  splashTitle: { fontSize: 24, fontWeight: 'bold', color: '#FFF' },
-  splashSubtitle: { fontSize: 14, color: '#A0A0A0', marginTop: 8 },
-  header: { paddingHorizontal: 20, paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: '#1A1A1A' },
-  headerTop: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15 },
-  backButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#1A1A1A', alignItems: 'center', marginBottom: 0 },
-  backIcon: { color: '#FFF', fontSize: 20, fontWeight: 'bold' },
+  logoBadge: { width: 90, height: 90, borderRadius: 45, backgroundColor: Colors.surfaceContainerHighest, justifyContent: 'center', alignItems: 'center', marginBottom: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  logoEmoji: { fontSize: 40 },
+  splashTitle: { fontSize: 24, fontWeight: 'bold', color: Colors.text },
+  splashSubtitle: { fontSize: 14, color: Colors.textSecondary, marginTop: 10, textAlign: 'center', paddingHorizontal: 40 },
+  
+  header: { 
+    paddingHorizontal: Layout.spacing.lg, 
+    paddingBottom: 20,
+    backgroundColor: Colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  headerTop: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surfaceContainerHigh, alignItems: 'center', justifyContent: 'center' },
+  backIcon: { color: Colors.text, fontSize: 18, fontWeight: 'bold' },
   headerTitleContainer: { flex: 1, marginHorizontal: 16 },
-  headerTitle: { fontSize: 20, fontWeight: '900', color: '#FFF' },
-  progressText: { fontSize: 13, color: '#7C3AED', marginTop: 2, fontWeight: '700' },
-  originalImage: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: '#7C3AED' },
-  progressBarBg: { height: 4, backgroundColor: '#1A1A1A', borderRadius: 2, overflow: 'hidden', marginTop: 8 },
-  progressBarFill: { height: '100%', backgroundColor: '#7C3AED' },
-  gridContainer: { flex: 1 },
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(26,26,26,0.9)', flexDirection: 'row', padding: 24, paddingBottom: 40, borderTopLeftRadius: 32, borderTopRightRadius: 32, gap: 12 },
-  actionButton: { flex: 1, height: 56, borderRadius: 18, alignItems: 'center' },
-  primaryButton: { backgroundColor: '#7C3AED' },
-  secondaryButton: { backgroundColor: '#1A1A1A', borderWidth: 1, borderColor: '#333' },
-  buttonText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: Colors.text },
+  progressText: { fontSize: 12, color: Colors.primary, marginTop: 2, fontWeight: 'bold' },
+  originalWrapper: { 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22, 
+    padding: 2, 
+    backgroundColor: 'rgba(208, 149, 255, 0.3)' 
+  },
+  originalImage: { width: '100%', height: '100%', borderRadius: 20 },
+  
+  progressBarBg: { height: 4, backgroundColor: Colors.surfaceContainerHighest, borderRadius: 2, overflow: 'hidden', marginTop: 12 },
+  progressBarFill: { height: '100%', backgroundColor: Colors.primary },
+  
+  gridContainer: { flex: 1, paddingTop: 12 },
+  
+  bottomBar: { 
+    position: 'absolute', 
+    bottom: 0, 
+    left: 0, 
+    right: 0, 
+    backgroundColor: 'rgba(14,14,14,0.9)', 
+    flexDirection: 'row', 
+    padding: Layout.spacing.lg, 
+    paddingBottom: 40, 
+    borderTopLeftRadius: 32, 
+    borderTopRightRadius: 32, 
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
+  },
+  actionButton: { flex: 1, height: 56, borderRadius: 28, overflow: 'hidden' },
+  primaryButton: { },
+  secondaryButton: { backgroundColor: Colors.surfaceContainerHigh, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  gradientBtn: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  buttonText: { color: Colors.text, fontWeight: 'bold', fontSize: 15 },
+  buttonTextDark: { color: '#000', fontWeight: 'bold', fontSize: 15 },
 });
 
 export default GenerateScreen;

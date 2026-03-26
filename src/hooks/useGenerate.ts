@@ -47,15 +47,19 @@ export const useGenerate = () => {
     }
   };
 
-  const generateAll = useCallback(async (imageBase64: string) => {
+  const generateAll = useCallback(async (imageBase64: string, selectedIds?: string[]) => {
     if (!imageBase64) return;
     
     setHasStarted(true);
 
-    // Initial loading setup for all styles
+    const targetStyles = selectedIds 
+      ? CLIPART_STYLES.filter(s => selectedIds.includes(s.id))
+      : CLIPART_STYLES;
+
+    // Initial loading setup
     const initialLoading: Record<string, boolean> = {};
     const initialResults: Record<string, null> = {};
-    CLIPART_STYLES.forEach(style => {
+    targetStyles.forEach(style => {
       initialLoading[style.id] = true;
       initialResults[style.id] = null;
     });
@@ -63,12 +67,10 @@ export const useGenerate = () => {
     setLoading(initialLoading);
     setResults(initialResults);
 
-    // Fire all generation requests with a staggered delay to respect Replicate's 
-    // Free Tier rate limit (approx 6 requests per minute).
-    CLIPART_STYLES.forEach((style, index) => {
+    targetStyles.forEach((style, index) => {
       setTimeout(() => {
         generateStyle(imageBase64, style.id);
-      }, index * 1000); // 1s stagger for a smooth UI popcorn effect
+      }, index * 1000);
     });
   }, []);
 

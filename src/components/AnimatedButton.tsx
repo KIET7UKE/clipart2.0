@@ -8,12 +8,13 @@ import Animated, {
 
 interface Props {
   children: React.ReactNode;
-  onPress: () => void;
+  onPress?: () => void;
+  onLongPress?: () => void;
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
 }
 
-export const AnimatedButton: React.FC<Props> = ({ children, onPress, style, disabled }) => {
+export const AnimatedButton: React.FC<Props> = ({ children, onPress, onLongPress, style, disabled }) => {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -33,12 +34,13 @@ export const AnimatedButton: React.FC<Props> = ({ children, onPress, style, disa
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled}
       style={({ pressed }) => [
         style,
-        { opacity: disabled ? 0.5 : 1 }
+        { opacity: disabled ? 0.5 : (pressed ? 0.9 : 1) }
       ]}
     >
       <Animated.View style={[animatedStyle, styles.inner]}>

@@ -1,5 +1,9 @@
 export type RootStackParamList = {
   HomeScreen: undefined;
-  GenerateScreen: { selectedImage?: string; style?: string };
+  CreateArtScreen: undefined;
+  GenerateScreen: { 
+    selectedImage?: string; 
+    styles: string[]; 
+  };
   ResultScreen: { images: string[]; prompt: string };
 };

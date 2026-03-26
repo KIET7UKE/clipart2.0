@@ -1,5 +1,14 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View, Text, Dimensions, Alert, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { 
+  StyleSheet, 
+  View, 
+  Text, 
+  Dimensions, 
+  Alert, 
+  Image, 
+  Modal, 
+  TouchableOpacity 
+} from 'react-native';
 import Animated, {
   FadeIn,
   useAnimatedStyle,
@@ -8,13 +17,15 @@ import Animated, {
   withTiming,
   withRepeat,
 } from 'react-native-reanimated';
+import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SkeletonCard } from './SkeletonCard';
 import { imageService } from '../services/imageService';
 import { ClipartStyle } from '../utils/constant/styles';
 import { AnimatedButton } from './AnimatedButton';
+import { Colors, Layout } from '../utils/theme/DesignSystem';
 
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 60) / 2;
+const { width, height } = Dimensions.get('window');
+const CARD_WIDTH = (width - Layout.spacing.lg * 2 - 16) / 2;
 
 interface Props {
   style: ClipartStyle;
@@ -31,8 +42,12 @@ export const StyleCard: React.FC<Props> = ({
   onRetry,
   index,
 }) => {
-  // 1. Shake Animation for Error State
+  const [modalVisible, setModalVisible] = useState(false);
   const shakeOffset = useSharedValue(0);
+
+  // Zoom gestures state
+  const scale = useSharedValue(1);
+  const savedScale = useSharedValue(1);
 
   useEffect(() => {
     if (result === 'error') {
@@ -52,6 +67,18 @@ export const StyleCard: React.FC<Props> = ({
 
   const animatedShake = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeOffset.value }],
+  }));
+
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      scale.value = savedScale.value * e.scale;
+    })
+    .onEnd(() => {
+      savedScale.value = scale.value;
+    });
+
+  const zoomStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
   }));
 
   const handleLongPress = () => {
@@ -80,100 +107,120 @@ export const StyleCard: React.FC<Props> = ({
     await imageService.shareImage(uri);
   };
 
+  const closeZoom = () => {
+     setModalVisible(false);
+     scale.value = withTiming(1);
+     savedScale.value = 1;
+  };
+
   if (loading) {
     return <SkeletonCard />;
   }
 
   return (
-    <View>
+    <Animated.View style={[styles.container, animatedShake]}>
       <View style={styles.header}>
-        <Text style={styles.emoji}>{style.emoji}</Text>
         <Text style={styles.label}>{style.label}</Text>
-
-        {/* 2. GREEN CHECKMARK BADGE on successful result */}
-        {result && result !== 'error' && (
-          <Animated.View
-            entering={FadeIn.delay(500)}
-            style={styles.checkmarkBadge}
-          >
-            <Text style={styles.checkmark}>✓</Text>
-          </Animated.View>
-        )}
       </View>
 
       <View style={styles.content}>
         {result === 'error' ? (
           <AnimatedButton onPress={onRetry} style={styles.errorContainer}>
             <Text style={styles.retryIcon}>🔄</Text>
-            <Text style={styles.errorText}>Failed</Text>
-            <Text style={styles.retryText}>Tap to retry</Text>
+            <Text style={styles.errorText}>Retry</Text>
           </AnimatedButton>
         ) : result ? (
-          <Animated.View
-            entering={FadeIn.duration(500)}
+          <AnimatedButton 
+            onPress={() => setModalVisible(true)}
+            onLongPress={handleLongPress}
             style={styles.imageWrapper}
           >
             <Image
               source={{ uri: result }}
-              style={{ width: 200, height: 200 }}
-              resizeMode="contain"
-              onError={e =>
-                console.error(
-                  'Image Load Error:',
-                  e.nativeEvent.error,
-                  'URI:',
-                  result,
-                )
-              }
+              style={styles.image}
+              resizeMode="cover"
             />
-          </Animated.View>
+          </AnimatedButton>
         ) : (
-          <View style={styles.emptyContainer} />
+          <View style={styles.emptyContainer}>
+             <Text style={styles.waitingText}>Cooking...</Text>
+          </View>
         )}
       </View>
-    </View>
+
+      {/* Zoom Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeZoom}
+      >
+        <GestureHandlerRootView style={styles.modalBg}>
+           <TouchableOpacity activeOpacity={1} style={styles.modalCloseArea} onPress={closeZoom} />
+           
+           <View style={styles.modalContent}>
+              <GestureDetector gesture={pinchGesture}>
+                 <Animated.View style={zoomStyle}>
+                    <Image 
+                      source={{ uri: result as string }} 
+                      style={styles.fullImage} 
+                      resizeMode="contain" 
+                    />
+                 </Animated.View>
+              </GestureDetector>
+           </View>
+
+           <View style={styles.modalFooter}>
+              <TouchableOpacity onPress={closeZoom} style={styles.closeBtn}>
+                 <Text style={styles.closeBtnText}>Close</Text>
+              </TouchableOpacity>
+              <Text style={styles.pinchHint}>Pinch to Zoom</Text>
+           </View>
+        </GestureHandlerRootView>
+      </Modal>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     width: CARD_WIDTH,
-    height: 200,
-    backgroundColor: '#1A1A1A',
-    borderRadius: 16,
-    padding: 12,
+    height: CARD_WIDTH * 1.3,
+    backgroundColor: Colors.surfaceContainerHigh,
+    borderRadius: 20,
+    padding: 10,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
+    borderColor: 'rgba(255,255,255,0.05)',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
     width: '100%',
   },
-  emoji: { fontSize: 18, marginRight: 8 },
-  label: { fontSize: 14, fontWeight: 'bold', color: '#FFF', flex: 1 },
-  checkmarkBadge: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkmark: { fontSize: 10, color: '#FFF', fontWeight: 'bold' },
+  label: { fontSize: 13, fontWeight: 'bold', color: Colors.text, flex: 1 },
   content: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: '#0D0D0D',
+    backgroundColor: '#000',
   },
   imageWrapper: { width: '100%', height: '100%' },
   image: { width: '100%', height: '100%' },
-  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  retryIcon: { fontSize: 24, marginBottom: 4 },
-  errorText: { color: '#EF4444', fontSize: 12, fontWeight: 'bold' },
-  retryText: { color: '#A0A0A0', fontSize: 10, marginTop: 2 },
-  emptyContainer: { flex: 1 },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#131313' },
+  retryIcon: { fontSize: 20, marginBottom: 4 },
+  errorText: { color: Colors.error, fontSize: 12, fontWeight: 'bold' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#131313' },
+  waitingText: { color: Colors.textSecondary, fontSize: 11, fontWeight: '500' },
+
+  // Modal Styles
+  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
+  modalCloseArea: { ...StyleSheet.absoluteFillObject },
+  modalContent: { width: width, height: height * 0.7, justifyContent: 'center', alignItems: 'center' },
+  fullImage: { width: width, height: height * 0.7 },
+  modalFooter: { position: 'absolute', bottom: 60, alignItems: 'center' },
+  closeBtn: { paddingHorizontal: 32, paddingVertical: 12, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.1)' },
+  closeBtnText: { color: '#FFF', fontWeight: 'bold' },
+  pinchHint: { color: 'rgba(255,255,255,0.5)', marginTop: 16, fontSize: 12 },
 });

@@ -26,9 +26,11 @@ export const ResultGrid: React.FC<Props> = ({ results, loading, onRetry }) => {
     </Animated.View>
   );
 
+  const filteredStyles = CLIPART_STYLES.filter(s => results.hasOwnProperty(s.id));
+
   return (
     <FlatList
-      data={CLIPART_STYLES}
+      data={filteredStyles}
       renderItem={renderItem}
       keyExtractor={(item) => item.id}
       numColumns={2}
