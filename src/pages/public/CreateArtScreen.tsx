@@ -8,16 +8,14 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-} from 'react-native'; 
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+} from 'react-native';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import LinearGradient from 'react-native-linear-gradient';
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  SlideInUp,
-} from 'react-native-reanimated';
 import {
   ArrowLeft,
   Image as ImageIcon,
@@ -45,7 +43,7 @@ const CreateArtScreen: React.FC = () => {
   const { image, loading, pickFromGallery, takePhoto, clearImage } =
     useImagePicker();
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
-  
+
   const isButtonDisabled = !image || selectedStyles.length === 0;
 
   const toggleStyle = (styleId: string) => {
@@ -86,7 +84,10 @@ const CreateArtScreen: React.FC = () => {
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 150 + insets.bottom }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: 150 + insets.bottom },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Step 1: Upload */}
@@ -159,7 +160,15 @@ const CreateArtScreen: React.FC = () => {
       </ScrollView>
 
       {/* Fixed Bottom Generation Bar */}
-      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 20), height: 80 + insets.bottom }]}>
+      <View
+        style={[
+          styles.bottomBar,
+          {
+            paddingBottom: Math.max(insets.bottom, 20),
+            height: 80 + insets.bottom,
+          },
+        ]}
+      >
         <AnimatedButton
           disabled={isButtonDisabled}
           style={styles.generateBtn}
@@ -167,9 +176,7 @@ const CreateArtScreen: React.FC = () => {
         >
           <LinearGradient
             colors={
-              isButtonDisabled
-                ? ['#2A2A2A', '#1A1A1A']
-                : Gradients.primary
+              isButtonDisabled ? ['#2A2A2A', '#1A1A1A'] : Gradients.primary
             }
             style={styles.btnGradient}
             start={{ x: 0, y: 0 }}
@@ -221,7 +228,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Layout.spacing.md,
   },
-  sectionLabel: { fontSize: 16, fontWeight: 'bold', color: Colors.text },
+  sectionLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.text,
+    paddingBottom: 16,
+  },
   countBadge: {
     paddingHorizontal: 12,
     paddingVertical: 4,
@@ -260,7 +272,7 @@ const styles = StyleSheet.create({
   uploadMainText: { color: Colors.text, fontSize: 17, fontWeight: 'bold' },
   uploadSubText: { color: Colors.textSecondary, fontSize: 13, marginTop: 4 },
   previewContainer: { width: '100%', height: '100%' },
-  previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  previewImage: { width: '100%', height: '100%', resizeMode: 'contain' },
   removeButton: {
     position: 'absolute',
     top: 12,
