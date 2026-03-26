@@ -4,126 +4,135 @@ import { Alert, Platform, PermissionsAndroid } from 'react-native';
 
 export const imageService = {
   /**
-   * Helper to check if a result value is a valid image URL.
+   * Helper to check if a result value is a valid image URL (Base64 or Link).
    */
   isValidResult: (result: string | 'error' | null): result is string => {
     return !!result && result !== 'error';
   },
 
   /**
-   * Download a single image from a URL or Base64 and save it to the device's Pictures folder.
+   * Request necessary storage permissions for Android.
+   */
+  requestPermissions: async () => {
+    if (Platform.OS !== 'android') return true;
+
+    try {
+      // For Android 13+ (API 33), we need READ_MEDIA_IMAGES
+      if (Platform.Version >= 33) {
+        const granted = await PermissionsAndroid.request(
+          'android.permission.READ_MEDIA_IMAGES' as any
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      }
+
+      // For Android < 13
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (err) {
+      return false;
+    }
+  },
+
+  /**
+   * Download a single image (Base64 or URL) and ensure it shows in Gallery.
    */
   downloadImage: async (imageSource: string, styleName: string): Promise<boolean> => {
     try {
-      // 1. Request Permission if Android
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-          {
-            title: 'Storage Permission',
-            message: 'Grant storage access to save cliparts to your gallery.',
-            buttonPositive: 'OK',
-          }
-        );
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED && parseInt(Platform.Version.toString()) < 30) {
-           throw new Error('Storage permission denied.');
-        }
+      const hasPermission = await imageService.requestPermissions();
+      if (!hasPermission && Platform.OS === 'android' && Platform.Version < 30) {
+        Alert.alert('Permission Denied', 'Storage access is required to save photos.');
+        return false;
       }
 
-      const timestamp = Date.now();
-      const fileName = `clipart_${styleName.toLowerCase()}_${timestamp}.png`;
+      const fileName = `Clipart_${styleName.replace(/\s+/g, '')}_${Date.now()}.png`;
       
-      const downloadPath = Platform.OS === 'android' 
-        ? `${RNFS.DownloadDirectoryPath}/${fileName}` 
-        : `${RNFS.DocumentDirectoryPath}/${fileName}`;
+      // Save to Pictures instead of Downloads for better Gallery visibility
+      const dirPath = Platform.OS === 'android' 
+        ? `${RNFS.ExternalStorageDirectoryPath}/Pictures/Clipart`
+        : `${RNFS.DocumentDirectoryPath}/Clipart`;
 
-      // 2. Handle Base64 vs URL
+      // Ensure directory exists
+      await RNFS.mkdir(dirPath);
+      const filePath = `${dirPath}/${fileName}`;
+
+      // Handle Base64
       if (imageSource.startsWith('data:')) {
-        const base64Data = imageSource.split(',')[1];
-        await RNFS.writeFile(downloadPath, base64Data, 'base64');
-        Alert.alert('Saved!', `Saved to downloads: ${fileName}`);
-        return true;
+        const base64Data = imageSource.split('base64,')[1];
+        await RNFS.writeFile(filePath, base64Data, 'base64');
       } else {
-        const response = await RNFS.downloadFile({
+        // Handle URL
+        await RNFS.downloadFile({
           fromUrl: imageSource,
-          toFile: downloadPath,
+          toFile: filePath,
         }).promise;
-
-        if (response.statusCode === 200) {
-          Alert.alert('Saved!', `Saved to downloads: ${fileName}`);
-          return true;
-        }
       }
-      return false;
+
+      // CRITICAL: Scan the file so it appears in Gallery immediately on Android
+      if (Platform.OS === 'android') {
+        await RNFS.scanFile(filePath);
+      }
+
+      Alert.alert('Success!', 'Image saved to your Gallery.');
+      return true;
     } catch (error: any) {
       console.error('Download Image Error:', error);
-      Alert.alert('Download Failed', error.message || 'Could not save the image.');
+      Alert.alert('Save Failed', 'Could not save image to gallery. Please check permissions.');
       return false;
     }
   },
 
   /**
-   * Bulk download multiple images that are valid.
+   * Share an image. Saves to cache first to ensure reliability with large Base64.
    */
-  downloadAllImages: async (results: Record<string, any>): Promise<void> => {
+  shareImage: async (imageSource: string): Promise<void> => {
     try {
-      const validUris = Object.entries(results).filter(([_, val]) => 
-        imageService.isValidResult(val)
-      );
+      let shareUrl = imageSource;
 
-      if (validUris.length === 0) {
-        Alert.alert('No Images', 'No generated images are available to download.');
-        return;
+      // For large Base64, save to a temp file first (more reliable for sharing)
+      if (imageSource.startsWith('data:')) {
+        const tempPath = `${RNFS.CachesDirectoryPath}/shared_image_${Date.now()}.png`;
+        const base64Data = imageSource.split('base64,')[1];
+        await RNFS.writeFile(tempPath, base64Data, 'base64');
+        shareUrl = `file://${tempPath}`;
       }
 
-      let successCount = 0;
-      for (const [styleId, imageSource] of validUris) {
-        try {
-          const fileName = `clipart_all_${styleId}_${Date.now()}.png`;
-          const downloadPath = Platform.OS === 'android' 
-            ? `${RNFS.DownloadDirectoryPath}/${fileName}` 
-            : `${RNFS.DocumentDirectoryPath}/${fileName}`;
-
-          if (imageSource.startsWith('data:')) {
-            const base64Data = imageSource.split(',')[1];
-            await RNFS.writeFile(downloadPath, base64Data, 'base64');
-            successCount++;
-          } else {
-            const res = await RNFS.downloadFile({ fromUrl: imageSource, toFile: downloadPath }).promise;
-            if (res.statusCode === 200) successCount++;
-          }
-        } catch (err) {
-          console.error(`Failed to download ${styleId}:`, err);
-        }
-      }
-
-      Alert.alert('Bulk Download Complete', `${successCount} images saved to Gallery/Downloads!`);
-    } catch (error) {
-       console.error('Download All Error:', error);
-       Alert.alert('Error', 'An error occurred during bulk download.');
-    }
-  },
-
-  /**
-   * Share an image URL using the native share sheet.
-   */
-  shareImage: async (imageUrl: string): Promise<void> => {
-    try {
       const options = {
-        title: 'Share Clipart',
-        url: imageUrl,
+        title: 'Check out my AI Clipart!',
+        url: shareUrl,
         type: 'image/png',
-        failOnCancel: false,
       };
       
       await Share.open(options);
     } catch (error: any) {
-      // User cancelled is not an error we show to them
-      if (error && error.message && error.message.includes('User did not share')) {
-        console.log('User cancelled share.');
-        return;
-      }
+      if (error && error.message && error.message.includes('User did not share')) return;
       console.error('Share Error:', error);
+      Alert.alert('Share Failed', 'Could not open share menu.');
+    }
+  },
+
+  /**
+   * Bulk download multiple valid images.
+   */
+  downloadAllImages: async (results: Record<string, string | 'error' | null>): Promise<void> => {
+    const validUris = Object.entries(results).filter(([_, val]) => 
+      imageService.isValidResult(val)
+    ) as [string, string][];
+
+    if (validUris.length === 0) {
+      Alert.alert('Notice', 'No ready images to download.');
+      return;
+    }
+
+    let successCount = 0;
+    for (const [styleId, source] of validUris) {
+      const success = await imageService.downloadImage(source, styleId);
+      if (success) successCount++;
+    }
+
+    if (successCount > 0) {
+      Alert.alert('Batch Save', `${successCount} images saved to Gallery.`);
     }
   },
 };
