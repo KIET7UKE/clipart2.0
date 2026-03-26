@@ -44,6 +44,10 @@ const STYLE_PROMPTS = {
     '16-bit pixel art clipart, retro video game sprite, clean white background, vibrant simplified palette',
   sketch:
     'pencil sketch clipart, hand-drawn graphite illustration, fine line work, black and white on clean white background',
+  '3d': '3D render clipart, Pixar style, soft ambient lighting, high detail, volumetric shadows, clean white background',
+  minimalist: 'minimalist line art clipart, continuous line drawing, simple elegant shapes, clean white background, modern aesthetic',
+  retro: 'retro vintage clipart, 1950s style, nostalgic color palette, textured paper look, clean white background',
+  graffiti: 'graffiti street art clipart, urban style, bold spray paint strokes, vibrant neon colors, clean white background',
 };
 
 // ─── Simple Vision Cache ──────────────────────────────────────

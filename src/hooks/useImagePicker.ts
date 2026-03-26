@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Alert } from 'react-native';
+import { Alert, PermissionsAndroid } from 'react-native';
 import { 
   launchImageLibrary, 
   launchCamera, 
@@ -82,14 +82,34 @@ export const useImagePicker = () => {
   }, []);
 
   const takePhoto = useCallback(async () => {
-    const result: ImagePickerResponse = await launchCamera({
-      mediaType: 'photo',
-      quality: 1,
-      includeExtra: true,
-    });
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+        {
+          title: 'Camera Permission',
+          message: 'Clipart AI needs access to your camera to take photos.',
+          buttonNeutral: 'Ask Me Later',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
+        },
+      );
+      
+      if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+        Alert.alert('Permission Denied', 'Camera access is required to take photos.');
+        return;
+      }
 
-    if (result.assets && result.assets[0]) {
-      await processImage(result.assets[0]);
+      const result: ImagePickerResponse = await launchCamera({
+        mediaType: 'photo',
+        quality: 1,
+        includeExtra: true,
+      });
+
+      if (result.assets && result.assets[0]) {
+        await processImage(result.assets[0]);
+      }
+    } catch (err) {
+      console.warn(err);
     }
   }, []);
 

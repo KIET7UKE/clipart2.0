@@ -43,7 +43,7 @@ export const AnimatedButton: React.FC<Props> = ({ children, onPress, onLongPress
         { opacity: disabled ? 0.5 : (pressed ? 0.9 : 1) }
       ]}
     >
-      <Animated.View style={[animatedStyle, styles.inner]}>
+      <Animated.View style={[styles.inner, animatedStyle]}>
         {children}
       </Animated.View>
     </Pressable>
@@ -53,6 +53,7 @@ export const AnimatedButton: React.FC<Props> = ({ children, onPress, onLongPress
 const styles = StyleSheet.create({
   inner: {
     width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },

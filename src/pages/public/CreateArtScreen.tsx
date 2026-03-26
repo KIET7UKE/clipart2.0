@@ -8,8 +8,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from 'react-native'; 
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import LinearGradient from 'react-native-linear-gradient';
@@ -40,10 +40,13 @@ type CreateArtNavigationProp = StackNavigationProp<
 >;
 
 const CreateArtScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<CreateArtNavigationProp>();
   const { image, loading, pickFromGallery, takePhoto, clearImage } =
     useImagePicker();
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
+  
+  const isButtonDisabled = !image || selectedStyles.length === 0;
 
   const toggleStyle = (styleId: string) => {
     setSelectedStyles(prev =>
@@ -70,7 +73,7 @@ const CreateArtScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeContainer}>
+    <SafeAreaView style={styles.safeContainer} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -83,7 +86,7 @@ const CreateArtScreen: React.FC = () => {
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 150 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Step 1: Upload */}
@@ -156,35 +159,37 @@ const CreateArtScreen: React.FC = () => {
       </ScrollView>
 
       {/* Fixed Bottom Generation Bar */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 20), height: 80 + insets.bottom }]}>
         <AnimatedButton
-          disabled={!image || selectedStyles.length === 0}
+          disabled={isButtonDisabled}
           style={styles.generateBtn}
           onPress={handleGenerate}
         >
           <LinearGradient
             colors={
-              !image || selectedStyles.length === 0
-                ? ['#333', '#222']
+              isButtonDisabled
+                ? ['#2A2A2A', '#1A1A1A']
                 : Gradients.primary
             }
             style={styles.btnGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
           >
-            <Wand2
-              color={!image || selectedStyles.length === 0 ? '#666' : '#000'}
-              size={20}
-              style={{ marginRight: 8 }}
-            />
-            <Text
-              style={[
-                styles.generateText,
-                (!image || selectedStyles.length === 0) && { color: '#666' },
-              ]}
-            >
-              Brew Art Magic
-            </Text>
+            <View style={styles.btnContent}>
+              <Wand2
+                color={isButtonDisabled ? '#555' : '#000'}
+                size={20}
+                style={{ marginRight: 10 }}
+              />
+              <Text
+                style={[
+                  styles.generateText,
+                  isButtonDisabled && { color: '#555' },
+                ]}
+              >
+                Brew Art Magic
+              </Text>
+            </View>
           </LinearGradient>
         </AnimatedButton>
       </View>
@@ -300,6 +305,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  btnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
   generateText: { fontSize: 18, fontWeight: 'bold', color: '#000' },
 });

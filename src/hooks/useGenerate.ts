@@ -13,6 +13,10 @@ export const useGenerate = () => {
     anime: null,
     pixel: null,
     sketch: null,
+    '3d': null,
+    minimalist: null,
+    retro: null,
+    graffiti: null,
   });
 
   // Loading: a map of style ID to boolean
@@ -22,6 +26,10 @@ export const useGenerate = () => {
     anime: false,
     pixel: false,
     sketch: false,
+    '3d': false,
+    minimalist: false,
+    retro: false,
+    graffiti: false,
   });
 
   const [hasStarted, setHasStarted] = useState(false);

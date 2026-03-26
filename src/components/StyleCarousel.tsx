@@ -27,11 +27,15 @@ export const StyleCarousel: React.FC = () => {
         style={styles.cardGradient}
       >
         <View style={styles.imagePlaceholder}>
-           <Text style={styles.styleEmoji}>{item.emoji}</Text>
+          <Image source={item.sample} style={styles.sampleImage} resizeMode="cover" />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.4)']}
+            style={styles.cardOverlay}
+          />
         </View>
         <View style={styles.content}>
           <Text style={styles.styleLabel}>{item.label}</Text>
-          <Text style={styles.styleDesc}>AI Crafted</Text>
+          <Text style={styles.styleDesc}>AI Crafted Artwork</Text>
         </View>
       </LinearGradient>
     </Animated.View>
@@ -89,12 +93,14 @@ const styles = StyleSheet.create({
   },
   imagePlaceholder: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    overflow: 'hidden',
   },
-  styleEmoji: {
-    fontSize: 40,
+  sampleImage: {
+    width: '100%',
+    height: '100%',
+  },
+  cardOverlay: {
+    ...StyleSheet.absoluteFillObject,
   },
   content: {
     padding: Layout.spacing.md,

@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
   Dimensions,
+  Image,
 } from 'react-native';
 import { Colors, Layout } from '../utils/theme/DesignSystem';
 import { ClipartStyle } from '../utils/constant/styles';
@@ -33,11 +34,12 @@ export const StyleOptionCard: React.FC<Props> = ({
       ]}
     >
       <View style={styles.iconContainer}>
-        <Text style={styles.emoji}>{style.emoji}</Text>
+        <Image source={style.sample} style={styles.sampleIcon} resizeMode="cover" />
       </View>
       <Text style={[styles.label, isSelected && styles.selectedLabel]}>
         {style.label}
       </Text>
+      {isSelected && <View style={styles.checkBadge} />}
     </TouchableOpacity>
   );
 };
@@ -45,13 +47,13 @@ export const StyleOptionCard: React.FC<Props> = ({
 const styles = StyleSheet.create({
   container: {
     width: CARD_WIDTH,
-    height: CARD_WIDTH * 1.2,
+    height: CARD_WIDTH * 1.3,
     backgroundColor: Colors.surfaceContainerHigh,
-    borderRadius: 16,
-    padding: 12,
+    borderRadius: 20,
+    padding: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: 'transparent',
     marginBottom: 12,
   },
@@ -60,22 +62,35 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(208, 149, 255, 0.1)',
   },
   iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: 'rgba(255,255,255,0.05)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
+    overflow: 'hidden',
   },
-  emoji: { fontSize: 24 },
+  sampleIcon: {
+    width: '100%',
+    height: '100%',
+  },
   label: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
     color: Colors.textSecondary,
     textAlign: 'center',
   },
   selectedLabel: {
     color: Colors.primary,
+  },
+  checkBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.primary,
   },
 });

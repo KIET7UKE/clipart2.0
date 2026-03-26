@@ -9,7 +9,7 @@ import {
   StatusBar,
   TouchableOpacity
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import Animated, { 
   FadeIn, 
@@ -19,7 +19,7 @@ import Animated, {
   useSharedValue 
 } from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, Download, Share2 } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/rootStackParamList';
 import { useGenerate } from '../../hooks/useGenerate';
 import { ResultGrid } from '../../components/ResultGrid';
@@ -30,6 +30,7 @@ import { Colors, Layout, Gradients } from '../../utils/theme/DesignSystem';
 type GenerateScreenRouteProp = RouteProp<RootStackParamList, 'GenerateScreen'>;
 
 const GenerateScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const route = useRoute<GenerateScreenRouteProp>();
   const navigation = useNavigation();
   const { selectedImage, styles: selectedStyleIds } = route.params;
@@ -107,11 +108,11 @@ const GenerateScreen: React.FC = () => {
   }
 
   return (
-    <SafeAreaView style={styles.safeContainer}>
+    <View style={styles.safeContainer}>
       <StatusBar barStyle="light-content" />
       
       {/* Professional Simple Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <View style={styles.headerTop}>
           <TouchableOpacity 
             style={styles.backButton} 
@@ -148,9 +149,12 @@ const GenerateScreen: React.FC = () => {
       </Animated.View>
 
       {/* Glassmorphic Bottom Bar */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 20), height: 80 + insets.bottom }]}>
         <AnimatedButton style={[styles.actionButton, styles.secondaryButton]} onPress={handleShareAll}>
-          <Text style={styles.buttonText}>Share Batch</Text>
+          <View style={styles.btnContent}>
+             <Share2 color={Colors.text} size={18} style={{ marginRight: 8 }} />
+             <Text style={styles.buttonText}>Share</Text>
+          </View>
         </AnimatedButton>
 
         <AnimatedButton style={[styles.actionButton, styles.primaryButton]} onPress={handleDownloadAll}>
@@ -160,11 +164,14 @@ const GenerateScreen: React.FC = () => {
             end={{ x: 1, y: 0 }}
             style={styles.gradientBtn}
           >
-            <Text style={styles.buttonTextDark}>Download All</Text>
+            <View style={styles.btnContent}>
+               <Download color="#000" size={18} style={{ marginRight: 8 }} />
+               <Text style={styles.buttonTextDark}>Download All</Text>
+            </View>
           </LinearGradient>
         </AnimatedButton>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -210,6 +217,7 @@ const styles = StyleSheet.create({
   primaryButton: { },
   secondaryButton: { backgroundColor: Colors.surfaceContainerHigh, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   gradientBtn: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  btnContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   buttonText: { color: Colors.text, fontWeight: 'bold', fontSize: 15 },
   buttonTextDark: { color: '#000', fontWeight: 'bold', fontSize: 15 },
 });
