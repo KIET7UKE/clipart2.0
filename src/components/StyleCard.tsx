@@ -9,6 +9,7 @@ import {
   Modal, 
   TouchableOpacity 
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   FadeIn,
   useAnimatedStyle,
@@ -101,9 +102,7 @@ export const StyleCard: React.FC<Props> = ({
      savedScale.value = 1;
   };
 
-  if (loading) {
-    return <SkeletonCard />;
-  }
+  const insets = useSafeAreaInsets();
 
   return (
     <Animated.View style={[styles.container, animatedShake]}>
@@ -129,13 +128,11 @@ export const StyleCard: React.FC<Props> = ({
                 style={styles.image}
                 resizeMode="cover"
               />
-              {/* Overlay Overlay Indicators */}
               <View style={styles.zoomIndicator}>
                  <ZoomIn color="#FFF" size={16} />
               </View>
             </TouchableOpacity>
 
-            {/* Clear Action Touch Points */}
             <View style={styles.actionOverlay}>
                <TouchableOpacity style={styles.miniActionBtn} onPress={handleSave}>
                   <Download color="#FFF" size={16} />
@@ -152,8 +149,7 @@ export const StyleCard: React.FC<Props> = ({
         )}
       </View>
 
-      {/* Zoom Modal */}
-      <Modal
+       <Modal
         visible={modalVisible}
         transparent={true}
         animationType="fade"
@@ -162,6 +158,17 @@ export const StyleCard: React.FC<Props> = ({
         <GestureHandlerRootView style={styles.modalBg}>
            <TouchableOpacity activeOpacity={1} style={styles.modalCloseArea} onPress={closeZoom} />
            
+           {/* Modal Header */}
+           <View style={[styles.modalHeader, { paddingTop: insets.top + 10 }]}>
+              <View style={styles.modalHeaderLeft}>
+                <Text style={styles.modalHeaderTitle}>{style.label}</Text>
+                <Text style={styles.pinchHint}>Pinch to Zoom</Text>
+              </View>
+              <TouchableOpacity style={styles.modalCloseCircle} onPress={closeZoom}>
+                 <Text style={styles.modalCloseX}>✕</Text>
+              </TouchableOpacity>
+           </View> 
+
            <View style={styles.modalContent}>
               <GestureDetector gesture={pinchGesture}>
                  <Animated.View style={zoomStyle}>
@@ -174,19 +181,19 @@ export const StyleCard: React.FC<Props> = ({
               </GestureDetector>
            </View>
 
-           <View style={styles.modalFooter}>
+           {/* Modal Footer */}
+           <View style={[styles.modalFooter, { paddingBottom: Math.max(insets.bottom, 40) }]}>
               <View style={styles.modalActions}>
                  <TouchableOpacity onPress={handleSave} style={styles.modalActionItem}>
-                    <Download color="#FFF" size={24} />
+                    <Download color="#000" size={24} />
+                    <Text style={styles.actionText}>Save Art</Text>
                  </TouchableOpacity>
+                 <View style={styles.actionDivider} />
                  <TouchableOpacity onPress={handleShare} style={styles.modalActionItem}>
-                    <Share2 color="#FFF" size={24} />
+                    <Share2 color="#000" size={24} />
+                    <Text style={styles.actionText}>Share</Text>
                  </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={closeZoom} style={styles.closeBtn}>
-                 <Text style={styles.closeBtnText}>Close</Text>
-              </TouchableOpacity>
-              <Text style={styles.pinchHint}>Pinch to Zoom</Text>
            </View>
         </GestureHandlerRootView>
       </Modal>
@@ -231,24 +238,22 @@ const styles = StyleSheet.create({
   },
   actionOverlay: { 
      position: 'absolute', 
-     bottom: 0, 
-     left: 0, 
-     right: 0, 
+     bottom: 10, 
+     left: 10, 
+     right: 10, 
      flexDirection: 'row', 
-     justifyContent: 'center', 
-     gap: 12, 
-     paddingBottom: 8,
-     backgroundColor: 'rgba(0,0,0,0.3)'
+     justifyContent: 'space-between', 
+     zIndex: 10,
   },
   miniActionBtn: { 
-     width: 36, 
-     height: 36, 
-     borderRadius: 18, 
-     backgroundColor: 'rgba(255,255,255,0.2)', 
+     width: 32, 
+     height: 32, 
+     borderRadius: 16, 
+     backgroundColor: 'rgba(0,0,0,0.6)', 
      justifyContent: 'center', 
      alignItems: 'center',
      borderWidth: 1,
-     borderColor: 'rgba(255,255,255,0.1)'
+     borderColor: 'rgba(255,255,255,0.2)'
   },
 
   errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#131313' },
@@ -257,21 +262,57 @@ const styles = StyleSheet.create({
   waitingText: { color: Colors.textSecondary, fontSize: 11, fontWeight: '500' },
 
   // Modal Styles
-  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.98)', justifyContent: 'center', alignItems: 'center' },
+  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.98)' },
   modalCloseArea: { ...StyleSheet.absoluteFillObject },
-  modalContent: { width: width, height: height * 0.7, justifyContent: 'center', alignItems: 'center' },
-  fullImage: { width: width, height: height * 0.7 },
-  modalFooter: { position: 'absolute', bottom: 60, alignItems: 'center', width: '100%' },
-  modalActions: { flexDirection: 'row', gap: 24, marginBottom: 30 },
-  modalActionItem: { 
-     width: 60, 
-     height: 60, 
-     borderRadius: 30, 
-     backgroundColor: 'rgba(255,255,255,0.1)', 
-     justifyContent: 'center', 
-     alignItems: 'center' 
+  modalHeader: {
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    zIndex: 10,
   },
-  closeBtn: { paddingHorizontal: 40, paddingVertical: 14, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  closeBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
-  pinchHint: { color: 'rgba(255,255,255,0.4)', marginTop: 20, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' },
+  modalHeaderLeft: { flex: 1 },
+  modalHeaderTitle: { color: '#FFF', fontSize: 20, fontWeight: 'bold' },
+  pinchHint: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 4, letterSpacing: 0.5 },
+  modalCloseCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCloseX: { color: '#FFF', fontSize: 18, fontWeight: '300' },
+  
+  modalContent: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  fullImage: { width: width, height: height * 0.7 },
+  
+  modalFooter: { 
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    width: '100%',
+  },
+  modalActions: { 
+    width: '100%',
+    flexDirection: 'row', 
+    backgroundColor: Colors.primary,
+    borderRadius: 30,
+    height: 60,
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  modalActionItem: { 
+     flex: 1,
+     flexDirection: 'row',
+     justifyContent: 'center',
+     alignItems: 'center',
+     height: '100%',
+     gap: 10,
+  },
+  actionDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  actionText: { color: '#000', fontSize: 15, fontWeight: 'bold' },
 });

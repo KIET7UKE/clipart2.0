@@ -149,27 +149,19 @@ const GenerateScreen: React.FC = () => {
       </Animated.View>
 
       {/* Glassmorphic Bottom Bar */}
-      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 20), height: 80 + insets.bottom }]}>
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 20) }]}>
         <AnimatedButton style={[styles.actionButton, styles.secondaryButton]} onPress={handleShareAll}>
           <View style={styles.btnContent}>
              <Share2 color={Colors.text} size={18} style={{ marginRight: 8 }} />
              <Text style={styles.buttonText}>Share</Text>
           </View>
         </AnimatedButton>
-
-        <AnimatedButton style={[styles.actionButton, styles.primaryButton]} onPress={handleDownloadAll}>
-          <LinearGradient
-            colors={Gradients.primary}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.gradientBtn}
-          >
-            <View style={styles.btnContent}>
-               <Download color="#000" size={18} style={{ marginRight: 8 }} />
-               <Text style={styles.buttonTextDark}>Download All</Text>
-            </View>
-          </LinearGradient>
-        </AnimatedButton>
+        <AnimatedButton style={[styles.actionButton, styles.secondaryButton]} onPress={handleDownloadAll}>
+          <View style={styles.btnContent}>
+            <Download color={Colors.text} size={18} style={{ marginRight: 8 }} />
+            <Text style={styles.buttonText}>Download All</Text>
+          </View>
+        </AnimatedButton> 
       </View>
     </View>
   );
@@ -205,21 +197,31 @@ const styles = StyleSheet.create({
     bottom: 0, 
     left: 0, 
     right: 0, 
-    backgroundColor: 'rgba(14,14,14,0.95)', 
+    backgroundColor: 'rgba(14, 14, 14, 0.98)', 
     flexDirection: 'row', 
-    padding: Layout.spacing.lg, 
-    paddingBottom: 40, 
-    gap: 12,
+    paddingHorizontal: Layout.spacing.lg, 
+    paddingTop: 16,
+    gap: 16,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.05)',
   },
-  actionButton: { flex: 1, height: 56, borderRadius: 28, overflow: 'hidden' },
+  actionButton: { flex: 1, height: 50, borderRadius: 25, overflow: 'hidden' },
   primaryButton: { },
-  secondaryButton: { backgroundColor: Colors.surfaceContainerHigh, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  gradientBtn: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  secondaryButton: { 
+    backgroundColor: 'rgba(255,255,255,0.05)', 
+    borderWidth: 1, 
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 25,
+  },
+  gradientBtn: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    borderRadius: 25,
+  },
   btnContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  buttonText: { color: Colors.text, fontWeight: 'bold', fontSize: 15 },
-  buttonTextDark: { color: '#000', fontWeight: 'bold', fontSize: 15 },
+  buttonText: { color: Colors.text, fontWeight: 'bold', fontSize: 13 },
+  buttonTextDark: { color: '#000', fontWeight: 'bold', fontSize: 13 },
 });
 
 export default GenerateScreen;
