@@ -181,10 +181,11 @@ app.post('/generate', async (req, res) => {
       throw err;
     }
 
+    const contentType = hfResponse.headers['content-type'] || 'image/png';
     const base64Image = Buffer.from(hfResponse.data).toString('base64');
-    const dataUri = `data:image/png;base64,${base64Image}`;
+    const dataUri = `data:${contentType};base64,${base64Image}`;
 
-    console.log(`[generate] styleId=${styleId} | DONE (Base64 returned)`);
+    console.log(`[generate] styleId=${styleId} | DONE (Content-Type: ${contentType}, length: ${base64Image.length})`);
     return res.json({ imageUrl: dataUri });
   } catch (err) {
     console.error(`[generate] Error:`, err.message);

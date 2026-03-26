@@ -1,19 +1,12 @@
 import React, { useEffect } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  Image, 
-  Dimensions, 
-  Alert
-} from 'react-native';
-import Animated, { 
-  FadeIn, 
-  useAnimatedStyle, 
-  useSharedValue, 
-  withSequence, 
-  withTiming, 
-  withRepeat 
+import { StyleSheet, View, Text, Dimensions, Alert, Image } from 'react-native';
+import Animated, {
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+  withRepeat,
 } from 'react-native-reanimated';
 import { SkeletonCard } from './SkeletonCard';
 import { imageService } from '../services/imageService';
@@ -31,17 +24,28 @@ interface Props {
   index: number;
 }
 
-export const StyleCard: React.FC<Props> = ({ style, loading, result, onRetry, index }) => {
+export const StyleCard: React.FC<Props> = ({
+  style,
+  loading,
+  result,
+  onRetry,
+  index,
+}) => {
   // 1. Shake Animation for Error State
   const shakeOffset = useSharedValue(0);
 
   useEffect(() => {
     if (result === 'error') {
       shakeOffset.value = withRepeat(
-        withSequence(withTiming(-5, { duration: 50 }), withTiming(5, { duration: 50 })),
+        withSequence(
+          withTiming(-5, { duration: 50 }),
+          withTiming(5, { duration: 50 }),
+        ),
         5,
         true,
-        () => { shakeOffset.value = 0; }
+        () => {
+          shakeOffset.value = 0;
+        },
       );
     }
   }, [result]);
@@ -60,7 +64,7 @@ export const StyleCard: React.FC<Props> = ({ style, loading, result, onRetry, in
           { text: 'Share', onPress: () => handleShare(result) },
           { text: 'Cancel', style: 'cancel' },
         ],
-        { cancelable: true }
+        { cancelable: true },
       );
     }
   };
@@ -81,45 +85,53 @@ export const StyleCard: React.FC<Props> = ({ style, loading, result, onRetry, in
   }
 
   return (
-    <Animated.View style={animatedShake}>
-      <AnimatedButton 
-        onPress={handleLongPress}
-        style={styles.container}
-      >
-        <View style={styles.header}>
-          <Text style={styles.emoji}>{style.emoji}</Text>
-          <Text style={styles.label}>{style.label}</Text>
-          
-          {/* 2. GREEN CHECKMARK BADGE on successful result */}
-          {result && result !== 'error' && (
-            <Animated.View entering={FadeIn.delay(500)} style={styles.checkmarkBadge}>
-               <Text style={styles.checkmark}>✓</Text>
-            </Animated.View>
-          )}
-        </View>
+    <View>
+      <View style={styles.header}>
+        <Text style={styles.emoji}>{style.emoji}</Text>
+        <Text style={styles.label}>{style.label}</Text>
 
-        <View style={styles.content}>
-          {result === 'error' ? (
-            <AnimatedButton onPress={onRetry} style={styles.errorContainer}>
-              <Text style={styles.retryIcon}>🔄</Text>
-              <Text style={styles.errorText}>Failed</Text>
-              <Text style={styles.retryText}>Tap to retry</Text>
-            </AnimatedButton>
-          ) : result ? (
-            <Animated.View entering={FadeIn.duration(500)} style={styles.imageWrapper}>
-              <Image 
-                source={{ uri: result }} 
-                style={styles.image} 
-                resizeMode="contain" 
-                onError={(e) => console.error('Image Load Error:', e.nativeEvent.error, 'URI:', result)}
-              />
-            </Animated.View>
-          ) : (
-            <View style={styles.emptyContainer} />
-          )}
-        </View>
-      </AnimatedButton>
-    </Animated.View>
+        {/* 2. GREEN CHECKMARK BADGE on successful result */}
+        {result && result !== 'error' && (
+          <Animated.View
+            entering={FadeIn.delay(500)}
+            style={styles.checkmarkBadge}
+          >
+            <Text style={styles.checkmark}>✓</Text>
+          </Animated.View>
+        )}
+      </View>
+
+      <View style={styles.content}>
+        {result === 'error' ? (
+          <AnimatedButton onPress={onRetry} style={styles.errorContainer}>
+            <Text style={styles.retryIcon}>🔄</Text>
+            <Text style={styles.errorText}>Failed</Text>
+            <Text style={styles.retryText}>Tap to retry</Text>
+          </AnimatedButton>
+        ) : result ? (
+          <Animated.View
+            entering={FadeIn.duration(500)}
+            style={styles.imageWrapper}
+          >
+            <Image
+              source={{ uri: result }}
+              style={{ width: 200, height: 200 }}
+              resizeMode="contain"
+              onError={e =>
+                console.error(
+                  'Image Load Error:',
+                  e.nativeEvent.error,
+                  'URI:',
+                  result,
+                )
+              }
+            />
+          </Animated.View>
+        ) : (
+          <View style={styles.emptyContainer} />
+        )}
+      </View>
+    </View>
   );
 };
 
@@ -142,9 +154,21 @@ const styles = StyleSheet.create({
   },
   emoji: { fontSize: 18, marginRight: 8 },
   label: { fontSize: 14, fontWeight: 'bold', color: '#FFF', flex: 1 },
-  checkmarkBadge: { width: 18, height: 18, borderRadius: 9, backgroundColor: '#10B981', justifyContent: 'center', alignItems: 'center' },
+  checkmarkBadge: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   checkmark: { fontSize: 10, color: '#FFF', fontWeight: 'bold' },
-  content: { flex: 1, borderRadius: 12, overflow: 'hidden', backgroundColor: '#0D0D0D' },
+  content: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#0D0D0D',
+  },
   imageWrapper: { width: '100%', height: '100%' },
   image: { width: '100%', height: '100%' },
   errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
