@@ -3,9 +3,7 @@ import {
   StyleSheet, 
   View, 
   Text, 
-  Image, 
   Alert, 
-  Dimensions,
   StatusBar,
   TouchableOpacity
 } from 'react-native';
@@ -18,14 +16,13 @@ import Animated, {
   withTiming, 
   useSharedValue 
 } from 'react-native-reanimated';
-import LinearGradient from 'react-native-linear-gradient';
 import { ArrowLeft, Download, Share2 } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/rootStackParamList';
 import { useGenerate } from '../../hooks/useGenerate';
 import { ResultGrid } from '../../components/ResultGrid';
 import { imageService } from '../../services/imageService';
 import { AnimatedButton } from '../../components/AnimatedButton';
-import { Colors, Layout, Gradients } from '../../utils/theme/DesignSystem';
+import { Colors, Layout } from '../../utils/theme/DesignSystem';
 
 type GenerateScreenRouteProp = RouteProp<RootStackParamList, 'GenerateScreen'>;
 
@@ -33,25 +30,30 @@ const GenerateScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const route = useRoute<GenerateScreenRouteProp>();
   const navigation = useNavigation();
-  const { selectedImage, styles: selectedStyleIds } = route.params;
+  const { selectedImage, styles: selectedStyleIds, customPrompt } = route.params;
   
-  const { results, loading, generateAll } = useGenerate();
+  const { results, loading, generateAll, retryStyle } = useGenerate();
   const [showSplash, setShowSplash] = useState(true);
 
-  // 1. Initial 1s Splash State
+  // Initial splash, then kick off generation
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
-      if (selectedImage) generateAll(selectedImage, selectedStyleIds);
+      if (selectedImage) {
+        generateAll(selectedImage, selectedStyleIds, customPrompt);
+      }
     }, 1200);
     return () => clearTimeout(timer);
-  }, [selectedImage, selectedStyleIds]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const completedCount = useMemo(() => {
     return Object.values(loading).filter(l => !l).length;
   }, [loading]);
 
-  const progressPercent = (completedCount / selectedStyleIds.length) * 100;
+  const progressPercent = selectedStyleIds.length > 0
+    ? (completedCount / selectedStyleIds.length) * 100
+    : 0;
   
   const progressWidth = useSharedValue(0);
   useEffect(() => {
@@ -73,24 +75,29 @@ const GenerateScreen: React.FC = () => {
   };
 
   const handleShareAll = async () => {
-     const successfulImages = Object.values(results).filter(r => r && r !== 'error') as string[];
-     if (successfulImages.length === 0) return;
-     await imageService.shareImage(successfulImages[0]);
+    const successfulImages = Object.values(results).filter(
+      r => r && r !== 'error',
+    ) as string[];
+    if (successfulImages.length === 0) {
+      Alert.alert('Nothing to Share', 'Wait for at least one image to finish generating.');
+      return;
+    }
+    await imageService.shareImage(successfulImages[0]);
   };
 
   const handleGoBack = () => {
-     if (completedCount < selectedStyleIds.length) {
-        Alert.alert(
-          'Abort Generation?',
-          'Generating art takes time. Are you sure you want to go back?',
-          [
-            { text: 'Wait', style: 'cancel' },
-            { text: 'Yes, Leave', onPress: () => navigation.goBack(), style: 'destructive' }
-          ]
-        );
-     } else {
-        navigation.goBack();
-     }
+    if (completedCount < selectedStyleIds.length) {
+      Alert.alert(
+        'Abort Generation?',
+        'Generating art takes time. Are you sure you want to go back?',
+        [
+          { text: 'Wait', style: 'cancel' },
+          { text: 'Yes, Leave', onPress: () => navigation.goBack(), style: 'destructive' },
+        ],
+      );
+    } else {
+      navigation.goBack();
+    }
   };
 
   if (showSplash) {
@@ -98,10 +105,14 @@ const GenerateScreen: React.FC = () => {
       <SafeAreaView style={styles.splashContainer}>
         <Animated.View exiting={FadeOut.duration(500)} style={styles.splashContent}>
           <View style={styles.logoBadge}>
-             <Text style={styles.logoEmoji}>🛸</Text>
+            <Text style={styles.logoEmoji}>🛸</Text>
           </View>
           <Text style={styles.splashTitle}>Brewing Your Art...</Text>
-          <Text style={styles.splashSubtitle}>Wait a moment while AI builds your styles</Text>
+          <Text style={styles.splashSubtitle}>
+            {customPrompt
+              ? `With style: "${customPrompt.substring(0, 40)}${customPrompt.length > 40 ? '…' : ''}"`
+              : 'Wait a moment while AI builds your styles'}
+          </Text>
         </Animated.View>
       </SafeAreaView>
     );
@@ -111,7 +122,7 @@ const GenerateScreen: React.FC = () => {
     <View style={styles.safeContainer}>
       <StatusBar barStyle="light-content" />
       
-      {/* Professional Simple Header */}
+      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <View style={styles.headerTop}>
           <TouchableOpacity 
@@ -119,22 +130,22 @@ const GenerateScreen: React.FC = () => {
             onPress={handleGoBack}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-             <ArrowLeft color={Colors.text} size={24} />
+            <ArrowLeft color={Colors.text} size={24} />
           </TouchableOpacity>
           
           <View style={styles.headerTitleContainer}>
-             <Text style={styles.headerTitle}>Collection Art</Text>
-             <Text style={styles.progressText}>
-                {selectedStyleIds.length === 1 
-                  ? 'Generating 1 style' 
-                  : `${completedCount} of ${selectedStyleIds.length} styles ready`
-                }
-             </Text>
+            <Text style={styles.headerTitle}>Collection Art</Text>
+            <Text style={styles.progressText}>
+              {selectedStyleIds.length === 1 
+                ? 'Generating 1 style' 
+                : `${completedCount} of ${selectedStyleIds.length} styles ready`
+              }
+            </Text>
           </View>
         </View>
 
         <View style={styles.progressBarBg}>
-           <Animated.View style={[styles.progressBarFill, animatedProgressStyle]} />
+          <Animated.View style={[styles.progressBarFill, animatedProgressStyle]} />
         </View>
       </View>
 
@@ -142,9 +153,7 @@ const GenerateScreen: React.FC = () => {
         <ResultGrid 
           results={results} 
           loading={loading} 
-          onRetry={(style) => {
-             Alert.alert('Retrying', `Regenerating ${style.label}...`);
-          }} 
+          onRetry={(style) => retryStyle(style.id)}
         />
       </Animated.View>
 
@@ -152,8 +161,8 @@ const GenerateScreen: React.FC = () => {
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 20) }]}>
         <AnimatedButton style={[styles.actionButton, styles.secondaryButton]} onPress={handleShareAll}>
           <View style={styles.btnContent}>
-             <Share2 color={Colors.text} size={18} style={{ marginRight: 8 }} />
-             <Text style={styles.buttonText}>Share</Text>
+            <Share2 color={Colors.text} size={18} style={{ marginRight: 8 }} />
+            <Text style={styles.buttonText}>Share</Text>
           </View>
         </AnimatedButton>
         <AnimatedButton style={[styles.actionButton, styles.secondaryButton]} onPress={handleDownloadAll}>
@@ -206,22 +215,14 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255,255,255,0.05)',
   },
   actionButton: { flex: 1, height: 50, borderRadius: 25, overflow: 'hidden' },
-  primaryButton: { },
   secondaryButton: { 
     backgroundColor: 'rgba(255,255,255,0.05)', 
     borderWidth: 1, 
     borderColor: 'rgba(255,255,255,0.1)',
     borderRadius: 25,
   },
-  gradientBtn: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center',
-    borderRadius: 25,
-  },
   btnContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   buttonText: { color: Colors.text, fontWeight: 'bold', fontSize: 13 },
-  buttonTextDark: { color: '#000', fontWeight: 'bold', fontSize: 13 },
 });
 
 export default GenerateScreen;

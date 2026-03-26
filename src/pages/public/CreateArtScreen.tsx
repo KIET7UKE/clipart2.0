@@ -8,6 +8,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  TextInput,
 } from 'react-native';
 import {
   SafeAreaView,
@@ -22,12 +23,15 @@ import {
   Camera,
   Trash2,
   Wand2,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
 } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/rootStackParamList';
 import { AnimatedButton } from '../../components/AnimatedButton';
 import { Colors, Layout, Gradients } from '../../utils/theme/DesignSystem';
 import { useImagePicker } from '../../hooks/useImagePicker';
-import { CLIPART_STYLES, ClipartStyle } from '../../utils/constant/styles';
+import { CLIPART_STYLES } from '../../utils/constant/styles';
 import { StyleOptionCard } from '../../components/StyleOptionCard';
 
 const { width } = Dimensions.get('window');
@@ -43,8 +47,11 @@ const CreateArtScreen: React.FC = () => {
   const { image, loading, pickFromGallery, takePhoto, clearImage } =
     useImagePicker();
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [showPromptEditor, setShowPromptEditor] = useState(false);
 
   const isButtonDisabled = !image || selectedStyles.length === 0;
+  const allSelected = selectedStyles.length === CLIPART_STYLES.length;
 
   const toggleStyle = (styleId: string) => {
     setSelectedStyles(prev =>
@@ -52,6 +59,14 @@ const CreateArtScreen: React.FC = () => {
         ? prev.filter(id => id !== styleId)
         : [...prev, styleId],
     );
+  };
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      setSelectedStyles([]);
+    } else {
+      setSelectedStyles(CLIPART_STYLES.map(s => s.id));
+    }
   };
 
   const handleGenerate = () => {
@@ -67,6 +82,7 @@ const CreateArtScreen: React.FC = () => {
     navigation.navigate('GenerateScreen', {
       selectedImage: image.base64,
       styles: selectedStyles,
+      customPrompt: customPrompt.trim() || undefined,
     });
   };
 
@@ -138,11 +154,18 @@ const CreateArtScreen: React.FC = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionLabel}>2. Select Styles to Brew</Text>
-            <View style={styles.countBadge}>
+            <TouchableOpacity
+              onPress={handleSelectAll}
+              style={styles.countBadge}
+            >
               <Text style={styles.countText}>
-                {selectedStyles.length} Selected
+                {allSelected
+                  ? 'Deselect All'
+                  : selectedStyles.length > 0
+                  ? `${selectedStyles.length} Selected`
+                  : 'Select All'}
               </Text>
-            </View>
+            </TouchableOpacity>
           </View>
           <View style={styles.styleGrid}>
             {CLIPART_STYLES.map(style => (
@@ -154,6 +177,50 @@ const CreateArtScreen: React.FC = () => {
               />
             ))}
           </View>
+        </View>
+
+        {/* Step 3: Prompt Customization (Bonus) */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.promptToggle}
+            onPress={() => setShowPromptEditor(v => !v)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.promptToggleLeft}>
+              <Sparkles color={Colors.primary} size={16} />
+              <Text style={styles.promptToggleText}>
+                Prompt Customization
+              </Text>
+              <View style={styles.promptBonusBadge}>
+                <Text style={styles.promptBonusBadgeText}>BONUS</Text>
+              </View>
+            </View>
+            {showPromptEditor ? (
+              <ChevronUp color={Colors.textSecondary} size={18} />
+            ) : (
+              <ChevronDown color={Colors.textSecondary} size={18} />
+            )}
+          </TouchableOpacity>
+
+          {showPromptEditor && (
+            <View style={styles.promptEditorWrap}>
+              <Text style={styles.promptHint}>
+                Add extra descriptors to personalize your art (e.g. "wearing
+                sunglasses", "in space", "holding a sword")
+              </Text>
+              <TextInput
+                style={styles.promptInput}
+                placeholder="e.g. wearing a crown, in space…"
+                placeholderTextColor={Colors.textSecondary}
+                value={customPrompt}
+                onChangeText={setCustomPrompt}
+                maxLength={120}
+                multiline
+                numberOfLines={2}
+              />
+              <Text style={styles.charCount}>{customPrompt.length}/120</Text>
+            </View>
+          )}
         </View>
 
         <View style={{ height: 120 }} />
@@ -194,7 +261,9 @@ const CreateArtScreen: React.FC = () => {
                   isButtonDisabled && { color: '#555' },
                 ]}
               >
-                Brew Art Magic
+                {selectedStyles.length > 1
+                  ? `Brew ${selectedStyles.length} Styles`
+                  : 'Brew Art Magic'}
               </Text>
             </View>
           </LinearGradient>
@@ -293,6 +362,72 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+  },
+
+  // Prompt Editor
+  promptToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.surfaceContainerLow,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(208, 149, 255, 0.15)',
+  },
+  promptToggleLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  promptToggleText: {
+    color: Colors.text,
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  promptBonusBadge: {
+    backgroundColor: 'rgba(208, 149, 255, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  promptBonusBadgeText: {
+    color: Colors.primary,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  promptEditorWrap: {
+    marginTop: 12,
+    backgroundColor: Colors.surfaceContainerLow,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(208, 149, 255, 0.15)',
+  },
+  promptHint: {
+    color: Colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  promptInput: {
+    backgroundColor: Colors.surfaceContainerHigh,
+    borderRadius: 12,
+    padding: 12,
+    color: Colors.text,
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    textAlignVertical: 'top',
+    minHeight: 60,
+  },
+  charCount: {
+    color: Colors.textSecondary,
+    fontSize: 11,
+    textAlign: 'right',
+    marginTop: 6,
   },
 
   bottomBar: {

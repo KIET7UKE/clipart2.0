@@ -10,17 +10,20 @@ export const aiService = {
   /**
    * Send image and style prompt to the backend for AI generation.
    * @param imageBase64 The base64-encoded user image.
-   * @param stylePrompt The specific clipart style prompt.
+   * @param styleId The specific clipart style ID.
+   * @param customPrompt Optional extra descriptors from the user.
    * @returns The generated image URL.
    */
   generateClipart: async (
     imageBase64: string,
     styleId: string,
+    customPrompt?: string,
   ): Promise<string> => {
     try {
       const response = await postAPI<GenerationResponse>(API_ENDPOINT, {
         image: imageBase64,
-        styleId: styleId, // one of: cartoon | flat | anime | pixel | sketch
+        styleId,
+        customPrompt: customPrompt || undefined,
       });
 
       if (response && response.imageUrl) {
@@ -30,7 +33,7 @@ export const aiService = {
       throw new Error('Unexpected response: Missing image URL.');
     } catch (error: any) {
       console.error(`AI Service Error [${styleId}]:`, error);
-      throw error; // Re-throw the error handled by postAPI
+      throw error;
     }
   },
 };

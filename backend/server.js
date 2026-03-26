@@ -55,7 +55,7 @@ const visionCache = new Map();
 
 // ─── POST /generate ───────────────────────────────────────────
 app.post('/generate', async (req, res) => {
-  let { image, styleId } = req.body;
+  let { image, styleId, customPrompt } = req.body;
 
   // 1. Cleanup: strip data URI prefix (e.g., 'data:image/jpeg;base64,') if present
   if (image && image.includes('base64,')) {
@@ -66,6 +66,13 @@ app.post('/generate', async (req, res) => {
     return res
       .status(400)
       .json({ error: 'Missing or invalid fields (image/styleId).' });
+  }
+
+  // Sanitize customPrompt
+  if (customPrompt && typeof customPrompt === 'string') {
+    customPrompt = customPrompt.trim().substring(0, 120); // enforce max 120 chars
+  } else {
+    customPrompt = '';
   }
 
   try {
@@ -156,9 +163,10 @@ app.post('/generate', async (req, res) => {
       }
     }
 
-    // 2. Combine description with the requested clipart style
+    // 2. Combine description with the requested clipart style (+ optional user customization)
     const stylePrompt = STYLE_PROMPTS[styleId];
-    const finalPrompt = `${stylePrompt} of ${subjectDescription}, minimalist, clean vector, white background, no text, no watermark`;
+    const customSuffix = customPrompt ? `, ${customPrompt}` : '';
+    const finalPrompt = `${stylePrompt} of ${subjectDescription}${customSuffix}, minimalist, clean vector, white background, no text, no watermark`;
     console.log(`[generate] Final Prompt: ${finalPrompt}`);
 
     // 3. Generate with Hugging Face (FLUX.1-schnell) - SUPERIOR QUALITY
