@@ -1,21 +1,22 @@
-import axios from "axios";
-import { getFromStore, setStore } from "../storage/device";
-import { KeyConstants } from "../storage/constant";
+import axios from 'axios';
+import { getFromStore, setStore } from '../storage/device';
+import { KeyConstants } from '../storage/constant';
 
 // Create an Axios instance
 const axiosInstance = axios.create({
-  // baseURL: "http://localhost:3000/api",
-  baseURL: "http://192.168.29.187:3000", // for debugging in android device via wifi
+  // baseURL: "http://localhost:3000",
+  // baseURL: "http://192.168.29.187:3000", // for debugging in android device via wifi
+  baseURL: 'https://clipart-beta.vercel.app', // for debugging in android device via wifi
 });
 
-axios.interceptors.request.use((request) => {
-  console.log("Starting Request", request);
+axios.interceptors.request.use(request => {
+  console.log('Starting Request', request);
   return request;
 });
 
 // Response interceptor
-axios.interceptors.response.use((response) => {
-  console.log("Response:", response);
+axios.interceptors.response.use(response => {
+  console.log('Response:', response);
   return response;
 });
 
@@ -29,7 +30,7 @@ export const setInterceptors = async () => {
   cachedDeviceId = await getFromStore(KeyConstants.DEVICE_ID);
 
   axiosInstance.interceptors.request.use(
-    (config) => {
+    config => {
       if (cachedToken) {
         config.headers.Authorization = `Bearer ${cachedToken}`;
       }
@@ -41,7 +42,7 @@ export const setInterceptors = async () => {
       }
       return config;
     },
-    (error) => Promise.reject(error),
+    error => Promise.reject(error),
   );
 };
 
