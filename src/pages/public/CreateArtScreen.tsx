@@ -118,7 +118,9 @@ const CreateArtScreen: React.FC = () => {
       >
         {/* Step 1: Upload */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>1. Upload your photo</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionLabel}>1. Upload your photo</Text>
+          </View>
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={image ? undefined : pickFromGallery}
@@ -195,7 +197,7 @@ const CreateArtScreen: React.FC = () => {
 
         {/* Step 3: Style Intensity (Bonus) */}
         <View style={styles.section}>
-          <View style={styles.intensityHeader}>
+          <View style={styles.sectionHeader}>
             <Text style={styles.sectionLabel} numberOfLines={1}>3. Style Intensity</Text>
             <View style={styles.promptBonusBadge}>
               <Text style={styles.promptBonusBadgeText}>BONUS</Text>
@@ -329,7 +331,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: Colors.text,
-    paddingBottom: 16,
   },
   countBadge: {
     paddingHorizontal: 12,
