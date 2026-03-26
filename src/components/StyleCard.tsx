@@ -18,6 +18,7 @@ import Animated, {
   withRepeat,
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Download, Share2, ZoomIn, RotateCcw } from 'lucide-react-native';
 import { SkeletonCard } from './SkeletonCard';
 import { imageService } from '../services/imageService';
 import { ClipartStyle } from '../utils/constant/styles';
@@ -81,30 +82,17 @@ export const StyleCard: React.FC<Props> = ({
     transform: [{ scale: scale.value }],
   }));
 
-  const handleLongPress = () => {
-    if (result && result !== 'error') {
-      Alert.alert(
-        'Image Options',
-        'Choose an action for this clipart:',
-        [
-          { text: 'Download', onPress: () => handleSave(result) },
-          { text: 'Share', onPress: () => handleShare(result) },
-          { text: 'Cancel', style: 'cancel' },
-        ],
-        { cancelable: true },
-      );
-    }
-  };
-
-  const handleSave = async (uri: string) => {
-    const success = await imageService.downloadImage(uri, style.label);
+  const handleSave = async () => {
+    if (!result || result === 'error') return;
+    const success = await imageService.downloadImage(result, style.label);
     if (!success) {
       Alert.alert('Error', 'Failed to save image.');
     }
   };
 
-  const handleShare = async (uri: string) => {
-    await imageService.shareImage(uri);
+  const handleShare = async () => {
+    if (!result || result === 'error') return;
+    await imageService.shareImage(result);
   };
 
   const closeZoom = () => {
@@ -120,27 +108,43 @@ export const StyleCard: React.FC<Props> = ({
   return (
     <Animated.View style={[styles.container, animatedShake]}>
       <View style={styles.header}>
-        <Text style={styles.label}>{style.label}</Text>
+        <Text style={styles.label} numberOfLines={1}>{style.label}</Text>
       </View>
 
       <View style={styles.content}>
         {result === 'error' ? (
           <AnimatedButton onPress={onRetry} style={styles.errorContainer}>
-            <Text style={styles.retryIcon}>🔄</Text>
+            <RotateCcw color={Colors.text} size={24} />
             <Text style={styles.errorText}>Retry</Text>
           </AnimatedButton>
         ) : result ? (
-          <AnimatedButton 
-            onPress={() => setModalVisible(true)}
-            onLongPress={handleLongPress}
-            style={styles.imageWrapper}
-          >
-            <Image
-              source={{ uri: result }}
-              style={styles.image}
-              resizeMode="cover"
-            />
-          </AnimatedButton>
+          <View style={styles.imageWrapper}>
+            <TouchableOpacity 
+              activeOpacity={0.9} 
+              onPress={() => setModalVisible(true)}
+              style={styles.imageBtn}
+            >
+              <Image
+                source={{ uri: result }}
+                style={styles.image}
+                resizeMode="cover"
+              />
+              {/* Overlay Overlay Indicators */}
+              <View style={styles.zoomIndicator}>
+                 <ZoomIn color="#FFF" size={16} />
+              </View>
+            </TouchableOpacity>
+
+            {/* Clear Action Touch Points */}
+            <View style={styles.actionOverlay}>
+               <TouchableOpacity style={styles.miniActionBtn} onPress={handleSave}>
+                  <Download color="#FFF" size={16} />
+               </TouchableOpacity>
+               <TouchableOpacity style={styles.miniActionBtn} onPress={handleShare}>
+                  <Share2 color="#FFF" size={16} />
+               </TouchableOpacity>
+            </View>
+          </View>
         ) : (
           <View style={styles.emptyContainer}>
              <Text style={styles.waitingText}>Cooking...</Text>
@@ -171,6 +175,14 @@ export const StyleCard: React.FC<Props> = ({
            </View>
 
            <View style={styles.modalFooter}>
+              <View style={styles.modalActions}>
+                 <TouchableOpacity onPress={handleSave} style={styles.modalActionItem}>
+                    <Download color="#FFF" size={24} />
+                 </TouchableOpacity>
+                 <TouchableOpacity onPress={handleShare} style={styles.modalActionItem}>
+                    <Share2 color="#FFF" size={24} />
+                 </TouchableOpacity>
+              </View>
               <TouchableOpacity onPress={closeZoom} style={styles.closeBtn}>
                  <Text style={styles.closeBtnText}>Close</Text>
               </TouchableOpacity>
@@ -185,7 +197,7 @@ export const StyleCard: React.FC<Props> = ({
 const styles = StyleSheet.create({
   container: {
     width: CARD_WIDTH,
-    height: CARD_WIDTH * 1.3,
+    height: CARD_WIDTH * 1.35,
     backgroundColor: Colors.surfaceContainerHigh,
     borderRadius: 20,
     padding: 10,
@@ -196,7 +208,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
     width: '100%',
   },
   label: { fontSize: 13, fontWeight: 'bold', color: Colors.text, flex: 1 },
@@ -207,20 +219,59 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   imageWrapper: { width: '100%', height: '100%' },
+  imageBtn: { flex: 1 },
   image: { width: '100%', height: '100%' },
+  zoomIndicator: { 
+     position: 'absolute', 
+     top: 8, 
+     right: 8, 
+     backgroundColor: 'rgba(0,0,0,0.5)', 
+     padding: 6, 
+     borderRadius: 12 
+  },
+  actionOverlay: { 
+     position: 'absolute', 
+     bottom: 0, 
+     left: 0, 
+     right: 0, 
+     flexDirection: 'row', 
+     justifyContent: 'center', 
+     gap: 12, 
+     paddingBottom: 8,
+     backgroundColor: 'rgba(0,0,0,0.3)'
+  },
+  miniActionBtn: { 
+     width: 36, 
+     height: 36, 
+     borderRadius: 18, 
+     backgroundColor: 'rgba(255,255,255,0.2)', 
+     justifyContent: 'center', 
+     alignItems: 'center',
+     borderWidth: 1,
+     borderColor: 'rgba(255,255,255,0.1)'
+  },
+
   errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#131313' },
-  retryIcon: { fontSize: 20, marginBottom: 4 },
-  errorText: { color: Colors.error, fontSize: 12, fontWeight: 'bold' },
+  errorText: { color: Colors.error, fontSize: 12, fontWeight: 'bold', marginTop: 8 },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#131313' },
   waitingText: { color: Colors.textSecondary, fontSize: 11, fontWeight: '500' },
 
   // Modal Styles
-  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
+  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.98)', justifyContent: 'center', alignItems: 'center' },
   modalCloseArea: { ...StyleSheet.absoluteFillObject },
   modalContent: { width: width, height: height * 0.7, justifyContent: 'center', alignItems: 'center' },
   fullImage: { width: width, height: height * 0.7 },
-  modalFooter: { position: 'absolute', bottom: 60, alignItems: 'center' },
-  closeBtn: { paddingHorizontal: 32, paddingVertical: 12, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.1)' },
-  closeBtnText: { color: '#FFF', fontWeight: 'bold' },
-  pinchHint: { color: 'rgba(255,255,255,0.5)', marginTop: 16, fontSize: 12 },
+  modalFooter: { position: 'absolute', bottom: 60, alignItems: 'center', width: '100%' },
+  modalActions: { flexDirection: 'row', gap: 24, marginBottom: 30 },
+  modalActionItem: { 
+     width: 60, 
+     height: 60, 
+     borderRadius: 30, 
+     backgroundColor: 'rgba(255,255,255,0.1)', 
+     justifyContent: 'center', 
+     alignItems: 'center' 
+  },
+  closeBtn: { paddingHorizontal: 40, paddingVertical: 14, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  closeBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+  pinchHint: { color: 'rgba(255,255,255,0.4)', marginTop: 20, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' },
 });

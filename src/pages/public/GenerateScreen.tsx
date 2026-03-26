@@ -19,15 +19,13 @@ import Animated, {
   useSharedValue 
 } from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
+import { ArrowLeft } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/rootStackParamList';
 import { useGenerate } from '../../hooks/useGenerate';
 import { ResultGrid } from '../../components/ResultGrid';
 import { imageService } from '../../services/imageService';
-import { CLIPART_STYLES } from '../../utils/constant/styles';
 import { AnimatedButton } from '../../components/AnimatedButton';
 import { Colors, Layout, Gradients } from '../../utils/theme/DesignSystem';
-
-const { width } = Dimensions.get('window');
 
 type GenerateScreenRouteProp = RouteProp<RootStackParamList, 'GenerateScreen'>;
 
@@ -80,7 +78,7 @@ const GenerateScreen: React.FC = () => {
   };
 
   const handleGoBack = () => {
-     if (completedCount < CLIPART_STYLES.length) {
+     if (completedCount < selectedStyleIds.length) {
         Alert.alert(
           'Abort Generation?',
           'Generating art takes time. Are you sure you want to go back?',
@@ -112,25 +110,26 @@ const GenerateScreen: React.FC = () => {
     <SafeAreaView style={styles.safeContainer}>
       <StatusBar barStyle="light-content" />
       
-      {/* Premium Header */}
+      {/* Professional Simple Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-             <Text style={styles.backIcon}>←</Text>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleGoBack}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+             <ArrowLeft color={Colors.text} size={24} />
           </TouchableOpacity>
           
           <View style={styles.headerTitleContainer}>
-             <Text style={styles.headerTitle}>Collective Art</Text>
+             <Text style={styles.headerTitle}>Collection Art</Text>
              <Text style={styles.progressText}>
-                {completedCount} of {CLIPART_STYLES.length} styles ready
+                {selectedStyleIds.length === 1 
+                  ? 'Generating 1 style' 
+                  : `${completedCount} of ${selectedStyleIds.length} styles ready`
+                }
              </Text>
           </View>
-
-          {selectedImage && (
-            <View style={styles.originalWrapper}>
-               <Image source={{ uri: `data:image/jpeg;base64,${selectedImage}` }} style={styles.originalImage} resizeMode="cover" />
-            </View>
-          )}
         </View>
 
         <View style={styles.progressBarBg}>
@@ -143,7 +142,6 @@ const GenerateScreen: React.FC = () => {
           results={results} 
           loading={loading} 
           onRetry={(style) => {
-             // Logic to re-trigger generation for a specific style could go here
              Alert.alert('Retrying', `Regenerating ${style.label}...`);
           }} 
         />
@@ -183,23 +181,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Layout.spacing.lg, 
     paddingBottom: 20,
     backgroundColor: Colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
   },
   headerTop: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
-  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surfaceContainerHigh, alignItems: 'center', justifyContent: 'center' },
-  backIcon: { color: Colors.text, fontSize: 18, fontWeight: 'bold' },
-  headerTitleContainer: { flex: 1, marginHorizontal: 16 },
+  backButton: { marginRight: 8, padding: 4 },
+  headerTitleContainer: { flex: 1 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: Colors.text },
-  progressText: { fontSize: 12, color: Colors.primary, marginTop: 2, fontWeight: 'bold' },
-  originalWrapper: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 22, 
-    padding: 2, 
-    backgroundColor: 'rgba(208, 149, 255, 0.3)' 
-  },
-  originalImage: { width: '100%', height: '100%', borderRadius: 20 },
+  progressText: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   
   progressBarBg: { height: 4, backgroundColor: Colors.surfaceContainerHighest, borderRadius: 2, overflow: 'hidden', marginTop: 12 },
   progressBarFill: { height: '100%', backgroundColor: Colors.primary },
@@ -211,12 +198,10 @@ const styles = StyleSheet.create({
     bottom: 0, 
     left: 0, 
     right: 0, 
-    backgroundColor: 'rgba(14,14,14,0.9)', 
+    backgroundColor: 'rgba(14,14,14,0.95)', 
     flexDirection: 'row', 
     padding: Layout.spacing.lg, 
     paddingBottom: 40, 
-    borderTopLeftRadius: 32, 
-    borderTopRightRadius: 32, 
     gap: 12,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.05)',

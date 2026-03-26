@@ -12,6 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { Sparkles, Zap, Wand } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/rootStackParamList';
 import { AnimatedButton } from '../../components/AnimatedButton';
 import { StyleCarousel } from '../../components/StyleCarousel';
@@ -47,7 +48,7 @@ const HomeScreen: React.FC = () => {
           {/* Top Bar / App Identity */}
           <Animated.View entering={FadeIn.duration(800)} style={styles.topBar}>
             <View style={styles.sparkIcon}>
-              <Text style={styles.sparkEmoji}>✨</Text>
+              <Sparkles color={Colors.primary} size={20} />
             </View>
             <Text style={styles.appName}>Clipart <Text style={styles.accentText}>AI</Text></Text>
           </Animated.View>
@@ -74,6 +75,7 @@ const HomeScreen: React.FC = () => {
                   style={styles.ctaGradient}
                 >
                   <Text style={styles.ctaButtonText}>Start Generating</Text>
+                  <Zap color="#000" size={18} style={{ marginLeft: 8 }} />
                 </LinearGradient>
               </AnimatedButton>
               <View style={styles.buttonGlow} />
@@ -86,7 +88,10 @@ const HomeScreen: React.FC = () => {
           {/* Tips Section */}
           <Animated.View entering={FadeInDown.delay(800).duration(800)} style={styles.tipsSection}>
              <View style={styles.tipsCard}>
-                <Text style={styles.tipsTitle}>Pro Tip</Text>
+                <View style={styles.tipHeader}>
+                   <Wand color={Colors.primary} size={14} style={{ marginRight: 6 }} />
+                   <Text style={styles.tipsTitle}>Pro Tip</Text>
+                </View>
                 <Text style={styles.tipsDesc}>Upload high-contrast photos for the best AI results.</Text>
              </View>
           </Animated.View>
@@ -108,7 +113,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
     opacity: 0.05,
   },
-  container: { flex: 1, paddingBottom: 40 },
+  container: { flex: 1, paddingBottom: 60 },
   topBar: {
     paddingHorizontal: Layout.spacing.lg,
     paddingVertical: Layout.spacing.md,
@@ -126,7 +131,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
-  sparkEmoji: { fontSize: 20 },
   appName: { fontSize: 22, fontWeight: 'bold', color: Colors.text },
   accentText: { color: Colors.primary },
   
@@ -166,6 +170,7 @@ const styles = StyleSheet.create({
   ctaGradient: {
     width: '100%',
     height: '100%',
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -196,12 +201,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)',
   },
+  tipHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   tipsTitle: {
     fontSize: 14,
     color: Colors.primary,
     fontWeight: 'bold',
     textTransform: 'uppercase',
-    marginBottom: 4,
   },
   tipsDesc: {
     fontSize: 15,
