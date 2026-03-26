@@ -6,7 +6,6 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
-  ActivityIndicator,
   Dimensions,
   RefreshControl,
   Modal,
@@ -25,6 +24,7 @@ import { RootStackParamList } from '../../navigation/rootStackParamList';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import { Colors } from '../../utils/theme/DesignSystem';
+import { SkeletonCard } from '../../components/SkeletonCard';
 
 const { width } = Dimensions.get('window');
 const COLUMN_COUNT = 2;
@@ -98,9 +98,18 @@ const HistoryScreen: React.FC = () => {
         </View>
 
         {loading && history.length === 0 ? (
-          <View style={styles.emptyState}>
-            <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.emptyText}>Loading your art gallery...</Text>
+          <View style={styles.listContent}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <SkeletonCard 
+                  key={i} 
+                  width={ITEM_WIDTH} 
+                  height={ITEM_WIDTH * 1.2} 
+                  borderRadius={16}
+                  style={{ margin: 8 }}
+                />
+              ))}
+            </View>
           </View>
         ) : history.length > 0 ? (
           <FlatList

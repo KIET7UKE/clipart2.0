@@ -20,6 +20,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Download, Share2, ZoomIn, RotateCcw } from 'lucide-react-native';
+import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 import { SkeletonCard } from './SkeletonCard';
 import { imageService } from '../services/imageService';
 import { ClipartStyle } from '../utils/constant/styles';
@@ -119,7 +120,15 @@ export const StyleCard: React.FC<Props> = ({
       </View>
 
       <View style={styles.content}>
-        {result === 'error' ? (
+        {loading ? (
+          <SkeletonPlaceholder 
+            backgroundColor="transparent" 
+            highlightColor="#333"
+            speed={1500}
+          >
+             <View style={{ width: '100%', height: '100%' }} />
+          </SkeletonPlaceholder>
+        ) : result === 'error' ? (
           <AnimatedButton onPress={onRetry} style={styles.errorContainer}>
             <RotateCcw color={Colors.text} size={24} />
             <Text style={styles.errorText}>Retry</Text>

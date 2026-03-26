@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   TextInput,
 } from 'react-native';
+import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -123,10 +124,17 @@ const CreateArtScreen: React.FC = () => {
           </View>
           <TouchableOpacity
             activeOpacity={0.9}
-            onPress={image ? undefined : pickFromGallery}
-            style={[styles.uploadArea, image && styles.uploadAreaActive]}
+            onPress={image || loading ? undefined : pickFromGallery}
+            style={[styles.uploadArea, (image || loading) && styles.uploadAreaActive]}
           >
-            {image ? (
+            {loading ? (
+              <SkeletonPlaceholder 
+                backgroundColor={Colors.surfaceContainerHigh} 
+                highlightColor="#333"
+              >
+                <View style={{ width: width - 80, height: 220, borderRadius: 24 }} />
+              </SkeletonPlaceholder>
+            ) : image ? (
               <View style={styles.previewContainer}>
                 <Image
                   source={{ uri: image.uri }}
