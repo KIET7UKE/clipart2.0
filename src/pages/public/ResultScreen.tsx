@@ -35,13 +35,13 @@ type ResultScreenRouteProp = RouteProp<RootStackParamList, 'ResultScreen'>;
 const ResultScreen: React.FC = () => {
   const route = useRoute<ResultScreenRouteProp>();
   const navigation = useNavigation<any>();
-  const { images, originalImage } = route.params;
+  const { images = [], originalImage } = route.params || {};
   const { showToast } = useToast();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOriginal, setShowOriginal] = useState(false);
 
-  const currentImage = images[currentIndex];
+  const currentImage = images[currentIndex] || '';
 
   const handleDownload = async () => {
     const success = await imageService.downloadImage(currentImage, `Clipart_${currentIndex}`);
