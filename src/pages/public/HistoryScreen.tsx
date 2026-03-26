@@ -8,9 +8,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
-  Share,
   RefreshControl,
+  Modal,
 } from 'react-native';
+import { Download, X } from 'lucide-react-native';
+import { imageService } from '../../services/imageService';
+import { useToast } from '../../components/ToastProvider';
 import { aiService, ClipartHistory } from '../../services/aiService';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/store/store';
@@ -29,8 +32,10 @@ const ITEM_WIDTH = (width - 48) / COLUMN_COUNT;
 
 const HistoryScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const { showToast } = useToast();
   const [history, setHistory] = useState<ClipartHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedItem, setSelectedItem] = useState<ClipartHistory | null>(null);
   const user = useSelector((state: RootState) => state.auth.user);
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
@@ -53,21 +58,23 @@ const HistoryScreen: React.FC = () => {
     }
   };
 
-  const handleShare = async (imageUrl: string) => {
-    try {
-      await Share.share({
-        message: 'Check out this AI-generated clipart I created!',
-        url: imageUrl,
-      });
-    } catch (error) {
-      console.error('Sharing failed:', error);
+  const handleDownload = async (imageUrl: string, styleId: string) => {
+    const success = await imageService.downloadImage(imageUrl, styleId);
+    if (success) {
+      showToast('Image saved to Gallery!');
+    } else {
+      showToast('Failed to save image', 'error');
     }
+  };
+
+  const handleShare = async (imageUrl: string) => {
+    await imageService.shareImage(imageUrl);
   };
 
   const renderItem = ({ item }: { item: ClipartHistory }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('ResultScreen', { imageUrl: item.imageUrl, fromHistory: true })}
+      onPress={() => setSelectedItem(item)}
     >
       <Image source={{ uri: item.imageUrl }} style={styles.thumbnail} />
       <View style={styles.cardOverlay}>
@@ -128,6 +135,59 @@ const HistoryScreen: React.FC = () => {
           </View>
         )}
       </LinearGradient>
+
+      {/* Preview Modal */}
+      <Modal
+        visible={!!selectedItem}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedItem(null)}
+      >
+        <TouchableOpacity 
+          activeOpacity={1} 
+          style={styles.modalBackdrop}
+          onPress={() => setSelectedItem(null)}
+        >
+          <View style={styles.modalContent}>
+            <View style={[styles.modalHeader, { paddingTop: insets.top + 20 }]}>
+              <TouchableOpacity
+                onPress={() => setSelectedItem(null)}
+                style={styles.modalCloseBtn}
+              >
+                <X color="#FFF" size={28} />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>{selectedItem?.styleId.toUpperCase() || 'PREVIEW'}</Text>
+              <View style={{ width: 44 }} />
+            </View>
+
+            <View style={styles.modalImageContainer}>
+              <Image 
+                source={{ uri: selectedItem?.imageUrl }} 
+                style={styles.modalImage} 
+                resizeMode="contain"
+              />
+            </View>
+
+            <View style={[styles.modalFooter, { paddingBottom: insets.bottom + 20 }]}>
+              <TouchableOpacity 
+                style={styles.modalActionBtn} 
+                onPress={() => selectedItem && handleShare(selectedItem.imageUrl)}
+              >
+                <Share2 color="#FFF" size={24} />
+                <Text style={styles.modalActionText}>Share</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[styles.modalActionBtn, styles.modalDownloadBtn]} 
+                onPress={() => selectedItem && handleDownload(selectedItem.imageUrl, selectedItem.styleId)}
+              >
+                <Download color="#000" size={24} />
+                <Text style={[styles.modalActionText, { color: '#000' }]}>Download</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -222,6 +282,75 @@ const styles = StyleSheet.create({
   },
   createButtonText: {
     color: '#0F172A',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  // Modal Styles
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '100%',
+    height: '100%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+  },
+  modalCloseBtn: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 22,
+  },
+  modalTitle: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  modalImageContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+    gap: 20,
+  },
+  modalActionBtn: {
+    flex: 1,
+    height: 56,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 28,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  modalDownloadBtn: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  modalActionText: {
+    color: '#FFF',
     fontWeight: 'bold',
     fontSize: 16,
   },

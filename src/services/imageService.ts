@@ -1,6 +1,6 @@
 import RNFS from 'react-native-fs';
 import Share from 'react-native-share';
-import { Alert, Platform, PermissionsAndroid } from 'react-native';
+import { Platform, PermissionsAndroid } from 'react-native';
 
 export const imageService = {
   /**
@@ -42,7 +42,6 @@ export const imageService = {
     try {
       const hasPermission = await imageService.requestPermissions();
       if (!hasPermission && Platform.OS === 'android' && Platform.Version < 30) {
-        Alert.alert('Permission Denied', 'Storage access is required to save photos.');
         return false;
       }
 
@@ -74,11 +73,9 @@ export const imageService = {
         await RNFS.scanFile(filePath);
       }
 
-      Alert.alert('Success!', 'Image saved to your Gallery.');
       return true;
     } catch (error: any) {
       console.error('Download Image Error:', error);
-      Alert.alert('Save Failed', 'Could not save image to gallery. Please check permissions.');
       return false;
     }
   },
@@ -108,21 +105,19 @@ export const imageService = {
     } catch (error: any) {
       if (error && error.message && error.message.includes('User did not share')) return;
       console.error('Share Error:', error);
-      Alert.alert('Share Failed', 'Could not open share menu.');
     }
   },
 
   /**
    * Bulk download multiple valid images.
    */
-  downloadAllImages: async (results: Record<string, string | 'error' | null>): Promise<void> => {
+  downloadAllImages: async (results: Record<string, string | 'error' | null>): Promise<{ success: number; total: number }> => {
     const validUris = Object.entries(results).filter(([_, val]) => 
       imageService.isValidResult(val)
     ) as [string, string][];
 
     if (validUris.length === 0) {
-      Alert.alert('Notice', 'No ready images to download.');
-      return;
+      return { success: 0, total: 0 };
     }
 
     let successCount = 0;
@@ -131,8 +126,6 @@ export const imageService = {
       if (success) successCount++;
     }
 
-    if (successCount > 0) {
-      Alert.alert('Batch Save', `${successCount} images saved to Gallery.`);
-    }
+    return { success: successCount, total: validUris.length };
   },
 };

@@ -2,8 +2,8 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { StyleSheet, View, Text, Dimensions, TouchableOpacity } from 'react-native';
 import Animated, {
   Layout,
-  SlideInUp,
-  SlideOutUp
+  FadeInUp,
+  FadeOutUp
 } from 'react-native-reanimated';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react-native';
 import { Colors } from '../utils/theme/DesignSystem';
@@ -59,9 +59,9 @@ const ToastItem: React.FC<{ toast: Toast, onDismiss: () => void }> = ({ toast, o
 
   return (
     <Animated.View
-      entering={SlideInUp.springify().damping(15)}
-      exiting={SlideOutUp}
-      layout={Layout.springify()}
+      entering={FadeInUp.duration(400)}
+      exiting={FadeOutUp.duration(300)}
+      layout={Layout.duration(300)}
       style={[styles.toast, { borderLeftColor: color }]}
     >
       <View style={styles.content}>

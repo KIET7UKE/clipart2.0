@@ -70,8 +70,14 @@ const GenerateScreen: React.FC = () => {
 
   const handleDownloadAll = async () => {
     try {
-      await imageService.downloadAllImages(results);
-      showToast('All styles saved to gallery!');
+      const { success, total } = await imageService.downloadAllImages(results);
+      if (success > 0) {
+        showToast(`${success} of ${total} styles saved to gallery!`);
+      } else if (total > 0) {
+        showToast('Download failed. Please check permissions.', 'error');
+      } else {
+        showToast('No images ready to download.', 'info');
+      }
     } catch (err) {
       showToast('Download failed', 'error');
     }
