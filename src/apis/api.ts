@@ -22,7 +22,6 @@ export const getAPI = async <T>(
         params,
         headers,
       });
-      console.log(response, "ress");
       return response.data;
     } catch (error: any) {
       console.log(error, "error");
@@ -55,7 +54,6 @@ export const postAPI = async <T>(
 ): Promise<T> => {
   return withInterceptors(async () => {
     try {
-      console.log(data, "data");
       const response = await axiosInstance.post<T>(endpoint, data, {
         params,
         headers,

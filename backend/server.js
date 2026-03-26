@@ -6,10 +6,19 @@ const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const fs = require('fs');
+const path = require('path');
+
+// Ensure generated folder exists
+const generatedPath = path.join(__dirname, 'generated');
+if (!fs.existsSync(generatedPath)) {
+  fs.mkdirSync(generatedPath);
+}
 
 // ─── Middleware ───────────────────────────────────────────────
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+app.use('/generated', express.static(generatedPath));
 
 // ─── Rate Limiter ─────────────────────────────────────────────
 const limiter = rateLimit({
@@ -60,56 +69,87 @@ app.post('/generate', async (req, res) => {
       `[generate] styleId=${styleId} | Starting generation for subject...`,
     );
 
-    // 1. USE Gemini for visual description (with caching)
+    // 1. USE Gemini for visual description (with caching & deduplication)
     let subjectDescription = '';
     const imageHash = image.substring(0, 100); // Simple hash (first 100 chars of base64)
 
     if (visionCache.has(imageHash)) {
-      subjectDescription = visionCache.get(imageHash);
-      console.log(`[generate] Visual Description (CACHED): ${subjectDescription}`);
+      console.log(`[generate] Visual Description (WAITING FOR CACHE): styleId=${styleId}`);
+      subjectDescription = await visionCache.get(imageHash);
     } else {
       console.log(`[generate] Calling Gemini 2.5 Flash for description...`);
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
       
-      const geminiPayload = {
-        contents: [
-          {
-            parts: [
-              {
-                text: 'Describe the main subject in 5 words maximum (e.g., boy in red hat). Only output the description.',
-              },
-              {
-                inline_data: {
-                  mime_type: 'image/jpeg',
-                  data: image,
+      const geminiTask = (async () => {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+        
+        const geminiPayload = {
+          contents: [
+            {
+              parts: [
+                {
+                  text: 'Describe the main subject in 5 words maximum (e.g., boy in red hat). Only output the description.',
                 },
-              },
-            ],
-          },
-        ],
-      };
+                {
+                  inline_data: {
+                    mime_type: 'image/jpeg',
+                    data: image,
+                  },
+                },
+              ],
+            },
+          ],
+        };
 
-      const visionResponse = await axios.post(geminiUrl, geminiPayload, {
-        headers: { 'Content-Type': 'application/json' },
-      });
+        // Exponential backoff retry logic for 429
+        const MAX_RETRIES = 3;
+        let delay = 2000; // start with 2s
 
-      if (
-        !visionResponse.data ||
-        !visionResponse.data.candidates ||
-        visionResponse.data.candidates.length === 0
-      ) {
-        throw new Error('Gemini API returned an empty response.');
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+          try {
+            const visionResponse = await axios.post(geminiUrl, geminiPayload, {
+              headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (
+              !visionResponse.data ||
+              !visionResponse.data.candidates ||
+              visionResponse.data.candidates.length === 0
+            ) {
+              throw new Error('Gemini API returned an empty response.');
+            }
+
+            return visionResponse.data.candidates[0].content.parts[0].text
+              .trim()
+              .replace(/[.,;]$/, '');
+          } catch (err) {
+            if (err.response && err.response.status === 429 && attempt < MAX_RETRIES) {
+              console.warn(`[generate] Gemini 429! Retry ${attempt}/${MAX_RETRIES} in ${delay}ms...`);
+              await new Promise(r => setTimeout(r, delay));
+              delay *= 2; // exponential backoff
+              continue;
+            }
+            throw err; // final attempt failed or other error
+          }
+        }
+      })();
+
+      // Store the Promise itself in the cache to avoid race conditions
+      visionCache.set(imageHash, geminiTask);
+      
+      try {
+        subjectDescription = await geminiTask;
+        console.log(`[generate] Visual Description (Gemini): ${subjectDescription}`);
+        
+        // Cleanup cache after 15 minutes
+        setTimeout(() => {
+          if (visionCache.get(imageHash) === geminiTask) {
+             visionCache.delete(imageHash);
+          }
+        }, 15 * 60 * 1000);
+      } catch (err) {
+        visionCache.delete(imageHash); // Don't cache failures
+        throw err;
       }
-
-      subjectDescription = visionResponse.data.candidates[0].content.parts[0].text
-        .trim()
-        .replace(/[.,;]$/, '');
-      
-      visionCache.set(imageHash, subjectDescription);
-      console.log(`[generate] Visual Description (Gemini): ${subjectDescription}`);
-      
-      // Cleanup cache after 5 minutes to prevent memory leaks
-      setTimeout(() => visionCache.delete(imageHash), 5 * 60 * 1000);
     }
 
     // 2. Combine description with the requested clipart style
@@ -117,21 +157,35 @@ app.post('/generate', async (req, res) => {
     const finalPrompt = `${stylePrompt} of ${subjectDescription}, minimalist, clean vector, white background, no text, no watermark`;
     console.log(`[generate] Final Prompt: ${finalPrompt}`);
 
-    // 3. Generate with Pollinations.ai (FREE / Authenticated)
-    const seed = Math.floor(Math.random() * 999999);
-    const encodedPrompt = encodeURIComponent(finalPrompt);
-    const pollKeyPart = process.env.POLLINATIONS_API_KEY ? `key=${process.env.POLLINATIONS_API_KEY}&` : '';
-    // Switching to 'z-image-turbo' as it's the correct name for the free turbo model
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?${pollKeyPart}width=512&height=512&seed=${seed}&nologo=true&model=z-image-turbo`;
+    // 3. Generate with Hugging Face (FLUX.1-schnell) - SUPERIOR QUALITY
+    console.log(`[generate] styleId=${styleId} | Calling Hugging Face...`);
+    let hfResponse;
+    try {
+      hfResponse = await axios.post(
+        'https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell',
+        { inputs: finalPrompt },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+            'Content-Type': 'application/json',
+            Accept: 'image/png',
+          },
+          responseType: 'arraybuffer',
+        },
+      );
+    } catch (err) {
+      if (err.response && err.response.data) {
+        const errorDetail = Buffer.from(err.response.data).toString();
+        console.error(`[generate] Hugging Face API Error Details:`, errorDetail);
+      }
+      throw err;
+    }
 
-    console.log(`[generate] styleId=${styleId} | done → ${imageUrl}`);
-    
-    // 4. Return as a PROXY URL to bypass mobile image loading issues
-    const protocol = req.headers['x-forwarded-proto'] || 'http';
-    const host = req.headers.host;
-    const proxiedUrl = `${protocol}://${host}/proxy-image?url=${encodeURIComponent(imageUrl)}`;
-    
-    return res.json({ imageUrl: proxiedUrl });
+    const base64Image = Buffer.from(hfResponse.data).toString('base64');
+    const dataUri = `data:image/png;base64,${base64Image}`;
+
+    console.log(`[generate] styleId=${styleId} | DONE (Base64 returned)`);
+    return res.json({ imageUrl: dataUri });
   } catch (err) {
     console.error(`[generate] Error:`, err.message);
     return res.status(500).json({
