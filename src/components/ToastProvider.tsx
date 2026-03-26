@@ -1,11 +1,9 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { StyleSheet, View, Text, Dimensions, TouchableOpacity } from 'react-native';
-import Animated, { 
-  FadeInUp, 
-  FadeOutUp, 
-  Layout, 
-  SlideInUp, 
-  SlideOutUp 
+import Animated, {
+  Layout,
+  SlideInUp,
+  SlideOutUp
 } from 'react-native-reanimated';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react-native';
 import { Colors } from '../utils/theme/DesignSystem';
@@ -60,7 +58,7 @@ const ToastItem: React.FC<{ toast: Toast, onDismiss: () => void }> = ({ toast, o
   const color = toast.type === 'success' ? '#4ADE80' : toast.type === 'error' ? '#FB7185' : Colors.primary;
 
   return (
-    <Animated.View 
+    <Animated.View
       entering={SlideInUp.springify().damping(15)}
       exiting={SlideOutUp}
       layout={Layout.springify()}

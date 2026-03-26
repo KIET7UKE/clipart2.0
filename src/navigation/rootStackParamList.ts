@@ -7,11 +7,14 @@ export type RootStackParamList = {
     styles: string[];
     customPrompt?: string;
     styleIntensity?: number; // 1–5 scale
+    userId?: string;
   };
   ResultScreen: { 
     images: string[]; 
     prompt: string;
     originalImage?: string; // base64 URI for before/after slider
+    fromHistory?: boolean;
   };
+  HistoryScreen: undefined;
 };
 

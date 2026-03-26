@@ -31,7 +31,7 @@ const GenerateScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const route = useRoute<GenerateScreenRouteProp>();
   const navigation = useNavigation();
-  const { selectedImage, originalImageUri, styles: selectedStyleIds, customPrompt, styleIntensity } = route.params;
+  const { selectedImage, originalImageUri, styles: selectedStyleIds, customPrompt, styleIntensity, userId } = route.params;
   const { showToast } = useToast();
   
   const { results, loading, generateAll, retryStyle } = useGenerate();
@@ -42,7 +42,7 @@ const GenerateScreen: React.FC = () => {
     const timer = setTimeout(() => {
       setShowSplash(false);
       if (selectedImage) {
-        generateAll(selectedImage, selectedStyleIds, customPrompt, styleIntensity ?? 3);
+        generateAll(selectedImage, selectedStyleIds, customPrompt, styleIntensity ?? 3, userId);
       }
     }, 1200);
     return () => clearTimeout(timer);

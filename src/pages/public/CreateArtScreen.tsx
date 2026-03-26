@@ -35,6 +35,9 @@ import { StyleOptionCard } from '../../components/StyleOptionCard';
 import { IntensitySlider } from '../../components/IntensitySlider';
 import { useToast } from '../../components/ToastProvider';
 
+import { useSelector } from 'react-redux';
+import { RootState } from '../../redux/store/store';
+
 const { width } = Dimensions.get('window');
 
 type CreateArtNavigationProp = StackNavigationProp<
@@ -45,6 +48,7 @@ type CreateArtNavigationProp = StackNavigationProp<
 const CreateArtScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<CreateArtNavigationProp>();
+  const user = useSelector((state: RootState) => state.auth.user);
   const { image, loading, pickFromGallery, takePhoto, clearImage } =
     useImagePicker();
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
@@ -88,6 +92,7 @@ const CreateArtScreen: React.FC = () => {
       styles: selectedStyles,
       customPrompt: customPrompt.trim() || undefined,
       styleIntensity,
+      userId: user?.id || 'demo_user_123',
     });
   };
 

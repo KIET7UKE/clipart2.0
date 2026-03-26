@@ -14,12 +14,14 @@ export const useGenerate = () => {
   const imageRef = useRef<string>('');
   const customPromptRef = useRef<string | undefined>(undefined);
   const intensityRef = useRef<number>(3);
+  const userIdRef = useRef<string | undefined>(undefined);
 
   const generateStyle = useCallback(async (
     imageBase64: string,
     styleId: string,
     customPrompt?: string,
     styleIntensity: number = 3,
+    userId?: string,
   ) => {
     try {
       setLoading(prev => ({ ...prev, [styleId]: true }));
@@ -30,6 +32,7 @@ export const useGenerate = () => {
         styleId,
         customPrompt,
         styleIntensity,
+        userId,
       );
 
       setResults(prev => ({ ...prev, [styleId]: imageUrl }));
@@ -47,12 +50,14 @@ export const useGenerate = () => {
       selectedIds?: string[],
       customPrompt?: string,
       styleIntensity: number = 3,
+      userId?: string,
     ) => {
       if (!imageBase64) return;
 
       imageRef.current = imageBase64;
       customPromptRef.current = customPrompt;
       intensityRef.current = styleIntensity;
+      userIdRef.current = userId;
       setHasStarted(true);
 
       const targetStyles = selectedIds
@@ -73,7 +78,7 @@ export const useGenerate = () => {
       // Stagger API calls to avoid overwhelming the backend/rate limits
       targetStyles.forEach((style, index) => {
         setTimeout(() => {
-          generateStyle(imageBase64, style.id, customPrompt, styleIntensity);
+          generateStyle(imageBase64, style.id, customPrompt, styleIntensity, userId);
         }, index * 1200);
       });
     },
@@ -88,6 +93,7 @@ export const useGenerate = () => {
         styleId,
         customPromptRef.current,
         intensityRef.current,
+        userIdRef.current,
       );
     },
     [generateStyle],

@@ -6,13 +6,14 @@ import {
   StatusBar,
   Dimensions,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { Sparkles, Zap, Wand } from 'lucide-react-native';
+import { Sparkles, Zap, Wand, Clock } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/rootStackParamList';
 import { AnimatedButton } from '../../components/AnimatedButton';
 import { StyleCarousel } from '../../components/StyleCarousel';
@@ -42,10 +43,18 @@ const HomeScreen: React.FC = () => {
 
       {/* Fixed Top Bar */}
       <Animated.View entering={FadeIn.duration(800)} style={styles.topBar}>
-        <View style={styles.sparkIcon}>
-          <Sparkles color={Colors.primary} size={20} />
+        <View style={styles.topBarLeft}>
+          <View style={styles.sparkIcon}>
+            <Sparkles color={Colors.primary} size={20} />
+          </View>
+          <Text style={styles.appName}>Clipart <Text style={styles.accentText}>AI</Text></Text>
         </View>
-        <Text style={styles.appName}>Clipart <Text style={styles.accentText}>AI</Text></Text>
+        <TouchableOpacity 
+          style={styles.historyButton} 
+          onPress={() => navigation.navigate('HistoryScreen')}
+        >
+          <Clock color={Colors.text} size={24} />
+        </TouchableOpacity>
       </Animated.View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -142,6 +151,21 @@ const styles = StyleSheet.create({
   },
   appName: { fontSize: 24, fontWeight: 'bold', color: Colors.text, letterSpacing: -0.5 },
   accentText: { color: Colors.primary },
+  topBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  historyButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: Colors.surfaceContainerHigh,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
 
   heroSection: {
     paddingHorizontal: Layout.spacing.lg,
