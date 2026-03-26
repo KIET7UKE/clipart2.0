@@ -11,9 +11,9 @@ export const imageService = {
   },
 
   /**
-   * Download a single image from a URL and save it to the device's Pictures folder.
+   * Download a single image from a URL or Base64 and save it to the device's Pictures folder.
    */
-  downloadImage: async (imageUrl: string, styleName: string): Promise<boolean> => {
+  downloadImage: async (imageSource: string, styleName: string): Promise<boolean> => {
     try {
       // 1. Request Permission if Android
       if (Platform.OS === 'android') {
@@ -34,18 +34,25 @@ export const imageService = {
       const fileName = `clipart_${styleName.toLowerCase()}_${timestamp}.png`;
       
       const downloadPath = Platform.OS === 'android' 
-        ? `${RNFS.ExternalDirectoryPath}/${fileName}` 
+        ? `${RNFS.DownloadDirectoryPath}/${fileName}` 
         : `${RNFS.DocumentDirectoryPath}/${fileName}`;
 
-      // 2. Download from URL
-      const response = await RNFS.downloadFile({
-        fromUrl: imageUrl,
-        toFile: downloadPath,
-      }).promise;
-
-      if (response.statusCode === 200) {
-        Alert.alert('Saved to gallery!', `Filename: ${fileName}`);
+      // 2. Handle Base64 vs URL
+      if (imageSource.startsWith('data:')) {
+        const base64Data = imageSource.split(',')[1];
+        await RNFS.writeFile(downloadPath, base64Data, 'base64');
+        Alert.alert('Saved!', `Saved to downloads: ${fileName}`);
         return true;
+      } else {
+        const response = await RNFS.downloadFile({
+          fromUrl: imageSource,
+          toFile: downloadPath,
+        }).promise;
+
+        if (response.statusCode === 200) {
+          Alert.alert('Saved!', `Saved to downloads: ${fileName}`);
+          return true;
+        }
       }
       return false;
     } catch (error: any) {
@@ -70,22 +77,27 @@ export const imageService = {
       }
 
       let successCount = 0;
-      for (const [styleId, imageUrl] of validUris) {
+      for (const [styleId, imageSource] of validUris) {
         try {
-          // Download without individual alerts to avoid spamming the user
           const fileName = `clipart_all_${styleId}_${Date.now()}.png`;
           const downloadPath = Platform.OS === 'android' 
-            ? `${RNFS.ExternalDirectoryPath}/${fileName}` 
+            ? `${RNFS.DownloadDirectoryPath}/${fileName}` 
             : `${RNFS.DocumentDirectoryPath}/${fileName}`;
 
-          const res = await RNFS.downloadFile({ fromUrl: imageUrl, toFile: downloadPath }).promise;
-          if (res.statusCode === 200) successCount++;
+          if (imageSource.startsWith('data:')) {
+            const base64Data = imageSource.split(',')[1];
+            await RNFS.writeFile(downloadPath, base64Data, 'base64');
+            successCount++;
+          } else {
+            const res = await RNFS.downloadFile({ fromUrl: imageSource, toFile: downloadPath }).promise;
+            if (res.statusCode === 200) successCount++;
+          }
         } catch (err) {
           console.error(`Failed to download ${styleId}:`, err);
         }
       }
 
-      Alert.alert('Bulk Download Complete', `${successCount} images saved to gallery!`);
+      Alert.alert('Bulk Download Complete', `${successCount} images saved to Gallery/Downloads!`);
     } catch (error) {
        console.error('Download All Error:', error);
        Alert.alert('Error', 'An error occurred during bulk download.');
