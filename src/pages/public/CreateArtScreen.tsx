@@ -177,7 +177,11 @@ const CreateArtScreen: React.FC = () => {
               </Text>
             </TouchableOpacity>
           </View>
-          <View style={styles.styleGrid}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.styleScrollContent}
+          >
             {CLIPART_STYLES.map(style => (
               <StyleOptionCard
                 key={style.id}
@@ -186,7 +190,7 @@ const CreateArtScreen: React.FC = () => {
                 onSelect={() => toggleStyle(style.id)}
               />
             ))}
-          </View>
+          </ScrollView>
         </View>
 
         {/* Step 3: Style Intensity (Bonus) */}
@@ -382,10 +386,9 @@ const styles = StyleSheet.create({
   quickActions: { marginTop: 16, alignItems: 'center' },
   quickBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8 },
   quickBtnText: { color: Colors.primary, fontWeight: 'bold', fontSize: 15 },
-  styleGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  styleScrollContent: {
+    paddingRight: 20,
+    gap: 12,
   },
 
   // Prompt Editor

@@ -11,7 +11,7 @@ import { Colors, Layout } from '../utils/theme/DesignSystem';
 import { ClipartStyle } from '../utils/constant/styles';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48 - 24) / 3;
+const CARD_WIDTH = width * 0.28;
 
 interface Props {
   style: ClipartStyle;
@@ -33,12 +33,12 @@ export const StyleOptionCard: React.FC<Props> = ({
         isSelected && styles.selectedContainer,
       ]}
     >
-      <View style={styles.iconContainer}>
-        <Image source={style.sample} style={styles.sampleIcon} resizeMode="cover" />
+      <Image source={style.sample} style={styles.cardImage} resizeMode="cover" />
+      <View style={styles.overlay}>
+        <Text style={[styles.label, isSelected && styles.selectedLabel]}>
+          {style.label}
+        </Text>
       </View>
-      <Text style={[styles.label, isSelected && styles.selectedLabel]}>
-        {style.label}
-      </Text>
       {isSelected && <View style={styles.checkBadge} />}
     </TouchableOpacity>
   );
@@ -50,36 +50,36 @@ const styles = StyleSheet.create({
     height: CARD_WIDTH * 1.3,
     backgroundColor: Colors.surfaceContainerHigh,
     borderRadius: 20,
-    padding: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
+    padding: 0,
+    overflow: 'hidden',
+    borderWidth: 2,
     borderColor: 'transparent',
     marginBottom: 12,
   },
   selectedContainer: {
     borderColor: Colors.primary,
-    backgroundColor: 'rgba(208, 149, 255, 0.1)',
   },
-  iconContainer: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-    overflow: 'hidden',
-  },
-  sampleIcon: {
+  cardImage: {
     width: '100%',
     height: '100%',
+    position: 'absolute',
+  },
+  overlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
   },
   label: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: Colors.textSecondary,
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#FFFFFF',
     textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   selectedLabel: {
     color: Colors.primary,
