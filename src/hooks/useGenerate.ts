@@ -10,14 +10,16 @@ export const useGenerate = () => {
   const [loading, setLoading] = useState<Record<StyleId, boolean>>({});
   const [hasStarted, setHasStarted] = useState(false);
 
-  // Store image+prompt so retry can re-use them
+  // Store params so retry can re-use them
   const imageRef = useRef<string>('');
   const customPromptRef = useRef<string | undefined>(undefined);
+  const intensityRef = useRef<number>(3);
 
   const generateStyle = useCallback(async (
     imageBase64: string,
     styleId: string,
     customPrompt?: string,
+    styleIntensity: number = 3,
   ) => {
     try {
       setLoading(prev => ({ ...prev, [styleId]: true }));
@@ -27,6 +29,7 @@ export const useGenerate = () => {
         imageBase64,
         styleId,
         customPrompt,
+        styleIntensity,
       );
 
       setResults(prev => ({ ...prev, [styleId]: imageUrl }));
@@ -39,11 +42,17 @@ export const useGenerate = () => {
   }, []);
 
   const generateAll = useCallback(
-    async (imageBase64: string, selectedIds?: string[], customPrompt?: string) => {
+    async (
+      imageBase64: string,
+      selectedIds?: string[],
+      customPrompt?: string,
+      styleIntensity: number = 3,
+    ) => {
       if (!imageBase64) return;
 
       imageRef.current = imageBase64;
       customPromptRef.current = customPrompt;
+      intensityRef.current = styleIntensity;
       setHasStarted(true);
 
       const targetStyles = selectedIds
@@ -64,7 +73,7 @@ export const useGenerate = () => {
       // Stagger API calls to avoid overwhelming the backend/rate limits
       targetStyles.forEach((style, index) => {
         setTimeout(() => {
-          generateStyle(imageBase64, style.id, customPrompt);
+          generateStyle(imageBase64, style.id, customPrompt, styleIntensity);
         }, index * 1200);
       });
     },
@@ -74,7 +83,12 @@ export const useGenerate = () => {
   const retryStyle = useCallback(
     (styleId: string) => {
       if (!imageRef.current) return;
-      generateStyle(imageRef.current, styleId, customPromptRef.current);
+      generateStyle(
+        imageRef.current,
+        styleId,
+        customPromptRef.current,
+        intensityRef.current,
+      );
     },
     [generateStyle],
   );

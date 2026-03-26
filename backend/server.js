@@ -55,7 +55,7 @@ const visionCache = new Map();
 
 // ─── POST /generate ───────────────────────────────────────────
 app.post('/generate', async (req, res) => {
-  let { image, styleId, customPrompt } = req.body;
+  let { image, styleId, customPrompt, styleIntensity } = req.body;
 
   // 1. Cleanup: strip data URI prefix (e.g., 'data:image/jpeg;base64,') if present
   if (image && image.includes('base64,')) {
@@ -74,6 +74,17 @@ app.post('/generate', async (req, res) => {
   } else {
     customPrompt = '';
   }
+
+  // Sanitize styleIntensity (1-5), default 3
+  const intensity = Math.max(1, Math.min(5, parseInt(styleIntensity) || 3));
+  const INTENSITY_MODIFIERS = [
+    'subtle stylization, realistic proportions, light style effect',         // 1
+    'mild stylization, slightly exaggerated features, soft style',           // 2
+    'balanced stylization, clear clipart look, clean lines',                 // 3
+    'bold stylization, strongly stylized, vibrant and graphic',              // 4
+    'maximum stylization, extreme clipart effect, fully abstract and graphic', // 5
+  ];
+  const intensityModifier = INTENSITY_MODIFIERS[intensity - 1];
 
   try {
     console.log(
@@ -163,11 +174,11 @@ app.post('/generate', async (req, res) => {
       }
     }
 
-    // 2. Combine description with the requested clipart style (+ optional user customization)
+    // 2. Combine description with the requested clipart style (+ optional user customization + intensity)
     const stylePrompt = STYLE_PROMPTS[styleId];
     const customSuffix = customPrompt ? `, ${customPrompt}` : '';
-    const finalPrompt = `${stylePrompt} of ${subjectDescription}${customSuffix}, minimalist, clean vector, white background, no text, no watermark`;
-    console.log(`[generate] Final Prompt: ${finalPrompt}`);
+    const finalPrompt = `${stylePrompt} of ${subjectDescription}${customSuffix}, ${intensityModifier}, minimalist, clean vector, white background, no text, no watermark`;
+    console.log(`[generate] Final Prompt (intensity=${intensity}): ${finalPrompt}`);
 
     // 3. Generate with Hugging Face (FLUX.1-schnell) - SUPERIOR QUALITY
     console.log(`[generate] styleId=${styleId} | Calling Hugging Face...`);

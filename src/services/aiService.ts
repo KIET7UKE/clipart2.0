@@ -12,18 +12,21 @@ export const aiService = {
    * @param imageBase64 The base64-encoded user image.
    * @param styleId The specific clipart style ID.
    * @param customPrompt Optional extra descriptors from the user.
+   * @param styleIntensity 1–5 scale controlling how strong the style effect is.
    * @returns The generated image URL.
    */
   generateClipart: async (
     imageBase64: string,
     styleId: string,
     customPrompt?: string,
+    styleIntensity: number = 3,
   ): Promise<string> => {
     try {
       const response = await postAPI<GenerationResponse>(API_ENDPOINT, {
         image: imageBase64,
         styleId,
         customPrompt: customPrompt || undefined,
+        styleIntensity,
       });
 
       if (response && response.imageUrl) {

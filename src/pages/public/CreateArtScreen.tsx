@@ -7,7 +7,6 @@ import {
   Dimensions,
   ScrollView,
   TouchableOpacity,
-  Alert,
   TextInput,
 } from 'react-native';
 import {
@@ -33,6 +32,8 @@ import { Colors, Layout, Gradients } from '../../utils/theme/DesignSystem';
 import { useImagePicker } from '../../hooks/useImagePicker';
 import { CLIPART_STYLES } from '../../utils/constant/styles';
 import { StyleOptionCard } from '../../components/StyleOptionCard';
+import { IntensitySlider } from '../../components/IntensitySlider';
+import { useToast } from '../../components/ToastProvider';
 
 const { width } = Dimensions.get('window');
 
@@ -49,6 +50,8 @@ const CreateArtScreen: React.FC = () => {
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [customPrompt, setCustomPrompt] = useState('');
   const [showPromptEditor, setShowPromptEditor] = useState(false);
+  const [styleIntensity, setStyleIntensity] = useState(3); // 1–5
+  const { showToast } = useToast();
 
   const isButtonDisabled = !image || selectedStyles.length === 0;
   const allSelected = selectedStyles.length === CLIPART_STYLES.length;
@@ -71,18 +74,20 @@ const CreateArtScreen: React.FC = () => {
 
   const handleGenerate = () => {
     if (!image) {
-      Alert.alert('Selection Required', 'Please upload a photo first.');
+      showToast('Please upload a photo first.', 'info');
       return;
     }
     if (selectedStyles.length === 0) {
-      Alert.alert('Style Required', 'Please select at least one style.');
+      showToast('Please select at least one style.', 'info');
       return;
     }
 
     navigation.navigate('GenerateScreen', {
       selectedImage: image.base64,
+      originalImageUri: image.uri,
       styles: selectedStyles,
       customPrompt: customPrompt.trim() || undefined,
+      styleIntensity,
     });
   };
 
@@ -179,8 +184,22 @@ const CreateArtScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Step 3: Prompt Customization (Bonus) */}
+        {/* Step 3: Style Intensity (Bonus) */}
         <View style={styles.section}>
+          <View style={styles.intensityHeader}>
+            <Text style={styles.sectionLabel} numberOfLines={1}>3. Style Intensity</Text>
+            <View style={styles.promptBonusBadge}>
+              <Text style={styles.promptBonusBadgeText}>BONUS</Text>
+            </View>
+          </View>
+          <View style={styles.intensityCard}>
+            <IntensitySlider value={styleIntensity} onChange={setStyleIntensity} />
+          </View>
+        </View>
+
+        {/* Step 4: Prompt Customization (Bonus) */}
+        <View style={styles.section}>
+
           <TouchableOpacity
             style={styles.promptToggle}
             onPress={() => setShowPromptEditor(v => !v)}
@@ -461,6 +480,21 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   generateText: { fontSize: 18, fontWeight: 'bold', color: '#000' },
+
+  // Intensity Slider
+  intensityHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingBottom: 16,
+  },
+  intensityCard: {
+    backgroundColor: Colors.surfaceContainerLow,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(208, 149, 255, 0.15)',
+  },
 });
 
 export default CreateArtScreen;

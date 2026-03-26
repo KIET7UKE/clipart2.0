@@ -8,9 +8,15 @@ interface Props {
   results: Record<string, string | 'error' | null>;
   loading: Record<string, boolean>;
   onRetry: (style: ClipartStyle) => void;
+  originalImageUri?: string; // pass-through for before/after slider
 }
 
-export const ResultGrid: React.FC<Props> = ({ results, loading, onRetry }) => {
+export const ResultGrid: React.FC<Props> = ({
+  results,
+  loading,
+  onRetry,
+  originalImageUri,
+}) => {
   const renderItem: ListRenderItem<ClipartStyle> = ({ item, index }) => (
     <Animated.View 
       entering={FadeInUp.delay(index * 150).duration(500).springify()}
@@ -22,6 +28,7 @@ export const ResultGrid: React.FC<Props> = ({ results, loading, onRetry }) => {
         result={results[item.id]}
         onRetry={() => onRetry(item)}
         index={index}
+        originalImageUri={originalImageUri}
       />
     </Animated.View>
   );
@@ -45,7 +52,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 120, // push list up for bottom bar
+    paddingBottom: 120,
   },
   columnWrapper: {
     justifyContent: 'space-between',

@@ -25,6 +25,8 @@ import { Colors, Layout, Gradients } from '../../utils/theme/DesignSystem';
 import { AnimatedButton } from '../../components/AnimatedButton';
 import { imageService } from '../../services/imageService';
 import { CLIPART_STYLES } from '../../utils/constant/styles';
+import { BeforeAfterSlider } from '../../components/BeforeAfterSlider';
+import { useToast } from '../../components/ToastProvider';
 
 const { width } = Dimensions.get('window');
 
@@ -33,7 +35,8 @@ type ResultScreenRouteProp = RouteProp<RootStackParamList, 'ResultScreen'>;
 const ResultScreen: React.FC = () => {
   const route = useRoute<ResultScreenRouteProp>();
   const navigation = useNavigation<any>();
-  const { images } = route.params;
+  const { images, originalImage } = route.params;
+  const { showToast } = useToast();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showOriginal, setShowOriginal] = useState(false);
@@ -42,7 +45,11 @@ const ResultScreen: React.FC = () => {
 
   const handleDownload = async () => {
     const success = await imageService.downloadImage(currentImage, `Clipart_${currentIndex}`);
-    if (success) Alert.alert('Success', 'Magic art saved to your gallery!');
+    if (success) {
+      showToast('Magic art saved to your gallery!');
+    } else {
+      showToast('Failed to save image', 'error');
+    }
   };
 
   const handleShare = async () => {
@@ -60,22 +67,21 @@ const ResultScreen: React.FC = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Main Preview */}
+        {/* Main Preview with Before/After Slider */}
         <Animated.View entering={FadeIn.duration(800)} style={styles.previewCard}>
-           <Image 
-             source={{ uri: currentImage }} 
-             style={styles.mainImage} 
-             resizeMode="cover"
-           />
-           
-           {/* Before/After Toggle Concept */}
-           <TouchableOpacity 
-             activeOpacity={0.8}
-             onPress={() => setShowOriginal(!showOriginal)}
-             style={styles.toggleBadge}
-           >
-              <Text style={styles.toggleText}>{showOriginal ? 'Reviewing...' : 'AI Clipart'}</Text>
-           </TouchableOpacity>
+           {originalImage ? (
+             <BeforeAfterSlider 
+               beforeUri={originalImage} 
+               afterUri={currentImage} 
+               height={width * 1.1} 
+             />
+           ) : (
+             <Image 
+               source={{ uri: currentImage }} 
+               style={styles.mainImage} 
+               resizeMode="cover"
+             />
+           )}
         </Animated.View>
 
         {/* Action Buttons */}

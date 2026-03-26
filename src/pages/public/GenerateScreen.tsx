@@ -23,6 +23,7 @@ import { ResultGrid } from '../../components/ResultGrid';
 import { imageService } from '../../services/imageService';
 import { AnimatedButton } from '../../components/AnimatedButton';
 import { Colors, Layout } from '../../utils/theme/DesignSystem';
+import { useToast } from '../../components/ToastProvider';
 
 type GenerateScreenRouteProp = RouteProp<RootStackParamList, 'GenerateScreen'>;
 
@@ -30,7 +31,8 @@ const GenerateScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const route = useRoute<GenerateScreenRouteProp>();
   const navigation = useNavigation();
-  const { selectedImage, styles: selectedStyleIds, customPrompt } = route.params;
+  const { selectedImage, originalImageUri, styles: selectedStyleIds, customPrompt, styleIntensity } = route.params;
+  const { showToast } = useToast();
   
   const { results, loading, generateAll, retryStyle } = useGenerate();
   const [showSplash, setShowSplash] = useState(true);
@@ -40,7 +42,7 @@ const GenerateScreen: React.FC = () => {
     const timer = setTimeout(() => {
       setShowSplash(false);
       if (selectedImage) {
-        generateAll(selectedImage, selectedStyleIds, customPrompt);
+        generateAll(selectedImage, selectedStyleIds, customPrompt, styleIntensity ?? 3);
       }
     }, 1200);
     return () => clearTimeout(timer);
@@ -69,8 +71,9 @@ const GenerateScreen: React.FC = () => {
   const handleDownloadAll = async () => {
     try {
       await imageService.downloadAllImages(results);
+      showToast('All styles saved to gallery!');
     } catch (err) {
-      Alert.alert('Error', 'Failed to download some images.');
+      showToast('Download failed', 'error');
     }
   };
 
@@ -79,7 +82,7 @@ const GenerateScreen: React.FC = () => {
       r => r && r !== 'error',
     ) as string[];
     if (successfulImages.length === 0) {
-      Alert.alert('Nothing to Share', 'Wait for at least one image to finish generating.');
+      showToast('Generating...', 'info');
       return;
     }
     await imageService.shareImage(successfulImages[0]);
@@ -154,6 +157,7 @@ const GenerateScreen: React.FC = () => {
           results={results} 
           loading={loading} 
           onRetry={(style) => retryStyle(style.id)}
+          originalImageUri={originalImageUri}
         />
       </Animated.View>
 

@@ -25,6 +25,8 @@ import { imageService } from '../services/imageService';
 import { ClipartStyle } from '../utils/constant/styles';
 import { AnimatedButton } from './AnimatedButton';
 import { Colors, Layout } from '../utils/theme/DesignSystem';
+import { BeforeAfterSlider } from './BeforeAfterSlider';
+import { useToast } from './ToastProvider';
 
 const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = (width - Layout.spacing.lg * 2 - 16) / 2;
@@ -35,6 +37,7 @@ interface Props {
   result: string | 'error' | null;
   onRetry: () => void;
   index: number;
+  originalImageUri?: string; // for before/after slider
 }
 
 export const StyleCard: React.FC<Props> = ({
@@ -43,8 +46,11 @@ export const StyleCard: React.FC<Props> = ({
   result,
   onRetry,
   index,
+  originalImageUri,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
+  const [showBeforeAfter, setShowBeforeAfter] = useState(false);
+  const { showToast } = useToast();
   const shakeOffset = useSharedValue(0);
 
   // Zoom gestures state
@@ -86,8 +92,10 @@ export const StyleCard: React.FC<Props> = ({
   const handleSave = async () => {
     if (!result || result === 'error') return;
     const success = await imageService.downloadImage(result, style.label);
-    if (!success) {
-      Alert.alert('Error', 'Failed to save image.');
+    if (success) {
+      showToast(`${style.label} saved!`);
+    } else {
+      showToast('Save failed', 'error');
     }
   };
 
@@ -162,23 +170,52 @@ export const StyleCard: React.FC<Props> = ({
            <View style={[styles.modalHeader, { paddingTop: insets.top + 10 }]}>
               <View style={styles.modalHeaderLeft}>
                 <Text style={styles.modalHeaderTitle}>{style.label}</Text>
-                <Text style={styles.pinchHint}>Pinch to Zoom</Text>
+                <Text style={styles.pinchHint}>
+                  {showBeforeAfter ? 'Drag divider to compare' : 'Pinch to Zoom'}
+                </Text>
               </View>
-              <TouchableOpacity style={styles.modalCloseCircle} onPress={closeZoom}>
-                 <Text style={styles.modalCloseX}>✕</Text>
-              </TouchableOpacity>
-           </View> 
+              <View style={styles.modalHeaderRight}>
+                {/* Before/After toggle — only show if we have the original */}
+                {originalImageUri && (
+                  <TouchableOpacity
+                    style={[
+                      styles.baToggle,
+                      showBeforeAfter && styles.baToggleActive,
+                    ]}
+                    onPress={() => setShowBeforeAfter(v => !v)}
+                  >
+                    <Text style={[
+                      styles.baToggleText,
+                      showBeforeAfter && styles.baToggleTextActive,
+                    ]}>
+                      {showBeforeAfter ? 'Zoom' : 'Before/After'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={styles.modalCloseCircle} onPress={closeZoom}>
+                   <Text style={styles.modalCloseX}>✕</Text>
+                </TouchableOpacity>
+              </View>
+           </View>
 
            <View style={styles.modalContent}>
-              <GestureDetector gesture={pinchGesture}>
-                 <Animated.View style={zoomStyle}>
-                    <Image 
-                      source={{ uri: result as string }} 
-                      style={styles.fullImage} 
-                      resizeMode="contain" 
-                    />
-                 </Animated.View>
-              </GestureDetector>
+              {showBeforeAfter && originalImageUri ? (
+                <BeforeAfterSlider
+                  beforeUri={originalImageUri}
+                  afterUri={result as string}
+                  height={height * 0.62}
+                />
+              ) : (
+                <GestureDetector gesture={pinchGesture}>
+                   <Animated.View style={zoomStyle}>
+                      <Image 
+                        source={{ uri: result as string }} 
+                        style={styles.fullImage} 
+                        resizeMode="contain" 
+                      />
+                   </Animated.View>
+                </GestureDetector>
+              )}
            </View>
 
            {/* Modal Footer */}
@@ -315,4 +352,31 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.1)',
   },
   actionText: { color: '#000', fontSize: 15, fontWeight: 'bold' },
+
+  // Before/After toggle button in modal
+  modalHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  baToggle: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  baToggleActive: {
+    backgroundColor: `${Colors.primary}33`,
+    borderColor: Colors.primary,
+  },
+  baToggleText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  baToggleTextActive: {
+    color: Colors.primary,
+  },
 });
