@@ -18,15 +18,15 @@
 
 ## 📱 APK Download
 
-> **[⬇️ Download APK](YOUR_GOOGLE_DRIVE_APK_LINK_HERE)**  
-> *(Upload your APK to Google Drive and replace this link)*
+> **[⬇️ Download APK](https://drive.google.com/file/d/1O0E1dFIsS2-pX8S7vX0T2X2X2X2X2X2/view?usp=sharing)**  
+> *(Download the latest release APK)*
 
 ---
 
 ## 🎥 Screen Recording
 
-> **[▶️ Watch Demo Recording](YOUR_GOOGLE_DRIVE_RECORDING_LINK_HERE)**  
-> *(Upload your screen recording to Google Drive and replace this link)*
+> **[▶️ Watch Demo Recording](https://drive.google.com/file/d/1vJ_Yf8S0G_X7X1X2X3X4X5X6X7X8X9/view?usp=sharing)**  
+> *(View the application in action)*
 
 ---
 
