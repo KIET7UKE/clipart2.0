@@ -71,25 +71,89 @@ module.exports.getSubjectDescription = async (image) => {
   }
 };
 
+// ─── HuggingFace Queue (prevent parallel requests all 429-ing at once) ────────
+let hfInFlight = 0;
+const HF_MAX_CONCURRENT = 2; // HF free tier handles ~2 simultaneous requests
+const hfQueue = [];
+
+function drainHfQueue() {
+  while (hfQueue.length > 0 && hfInFlight < HF_MAX_CONCURRENT) {
+    const { resolve } = hfQueue.shift();
+    resolve();
+  }
+}
+
+function acquireHfSlot() {
+  if (hfInFlight < HF_MAX_CONCURRENT) {
+    hfInFlight++;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => hfQueue.push({ resolve }));
+}
+
+function releaseHfSlot() {
+  hfInFlight--;
+  drainHfQueue();
+}
+
 /**
  * Generate clipart using Hugging Face (FLUX.1-schnell).
+ * Retries up to 4 times with exponential backoff on 429 responses,
+ * and respects the Retry-After header when present.
  */
 module.exports.generateClipart = async (finalPrompt) => {
-  console.log(`[aiService] Generating with Hugging Face...`);
-  const response = await axios.post(
-    'https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell',
-    { inputs: finalPrompt },
-    {
-      headers: {
-        Authorization: `Bearer ${config.HUGGINGFACE_API_KEY}`,
-        'Content-Type': 'application/json',
-        Accept: 'image/png',
-      },
-      responseType: 'arraybuffer',
-    },
-  );
+  const MAX_RETRIES = 4;
+  let delay = 3000; // start at 3s
 
-  const contentType = response.headers['content-type'] || 'image/png';
-  const base64Image = Buffer.from(response.data).toString('base64');
-  return `data:${contentType};base64,${base64Image}`;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    // Wait for a free slot before each attempt
+    await acquireHfSlot();
+
+    try {
+      console.log(`[aiService] HF generation attempt ${attempt}/${MAX_RETRIES}...`);
+      const response = await axios.post(
+        'https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell',
+        { inputs: finalPrompt },
+        {
+          headers: {
+            Authorization: `Bearer ${config.HUGGINGFACE_API_KEY}`,
+            'Content-Type': 'application/json',
+            Accept: 'image/png',
+          },
+          responseType: 'arraybuffer',
+          timeout: 60000, // 60s timeout per attempt
+        },
+      );
+
+      releaseHfSlot();
+      const contentType = response.headers['content-type'] || 'image/png';
+      const base64Image = Buffer.from(response.data).toString('base64');
+      return `data:${contentType};base64,${base64Image}`;
+
+    } catch (err) {
+      releaseHfSlot();
+
+      const status = err.response?.status;
+      const isRateLimit = status === 429;
+      const isServerError = status >= 500;
+
+      if ((isRateLimit || isServerError) && attempt < MAX_RETRIES) {
+        // Respect Retry-After header if present (in seconds)
+        const retryAfterHeader = err.response?.headers?.['retry-after'];
+        const waitMs = retryAfterHeader
+          ? parseInt(retryAfterHeader, 10) * 1000
+          : delay;
+
+        console.warn(
+          `[aiService] HuggingFace ${status}! Retry ${attempt}/${MAX_RETRIES} in ${waitMs}ms...`
+        );
+        await new Promise((r) => setTimeout(r, waitMs));
+        delay *= 2; // exponential backoff for next iteration
+        continue;
+      }
+
+      // Non-retryable error or final attempt
+      throw err;
+    }
+  }
 };
