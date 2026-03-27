@@ -3,10 +3,6 @@
 </p>
 
 <p align="center">
-  <img src="src/assets/icons/clipart_icon.png" alt="Clipart AI App Icon" width="100"/>
-</p>
-
-<p align="center">
   <strong>Transform any photo into stunning clipart art using AI.</strong><br/>
   Built with React Native + Node.js backend.
 </p>
