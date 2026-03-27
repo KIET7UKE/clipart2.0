@@ -20,8 +20,8 @@ module.exports.getSubjectDescription = async (
 
   console.log(`[aiService] Requesting Gemini description...`);
   const geminiTask = (async () => {
-    // Use gemini-1.5-flash-latest: stable model, generous free tier, no 403s on camera images
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${config.GEMINI_API_KEY}`;
+    // Use gemini-3.1-flash-lite-preview: high-RPD free tier model (500 RPD) to resolve rate limiting.
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key=${config.GEMINI_API_KEY}`;
 
     const geminiPayload = {
       contents: [
