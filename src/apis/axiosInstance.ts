@@ -8,7 +8,7 @@ import { showToast } from '../utils/toastBridge';
 const axiosInstance = axios.create({
   // baseURL: "http://localhost:3000",
   // baseURL: "http://192.168.29.187:3000", // for debugging in android device via wifi
-  baseURL: 'https://clipart2-0.vercel.app/', // for debugging in android device via wifi
+  baseURL: 'https://clipart2-0.vercel.app', // for debugging in android device via wifi
 });
 
 // Response interceptor for global error handling
