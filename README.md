@@ -18,14 +18,14 @@
 
 ## 📱 APK Download
 
-> **[⬇️ Download APK](https://drive.google.com/file/d/1O0E1dFIsS2-pX8S7vX0T2X2X2X2X2X2/view?usp=sharing)**  
+> **[⬇️ Download APK](https://drive.google.com/drive/u/1/folders/1bp6mSwCi_ZAMI703zO4B_106PdWQy7QH)**  
 > *(Download the latest release APK)*
 
 ---
 
 ## 🎥 Screen Recording
 
-> **[▶️ Watch Demo Recording](https://drive.google.com/file/d/1vJ_Yf8S0G_X7X1X2X3X4X5X6X7X8X9/view?usp=sharing)**  
+> **[▶️ Watch Demo Recording](https://drive.google.com/drive/u/1/folders/1bp6mSwCi_ZAMI703zO4B_106PdWQy7QH)**  
 > *(View the application in action)*
 
 ---
