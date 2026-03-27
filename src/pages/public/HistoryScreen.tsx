@@ -28,7 +28,7 @@ import { SkeletonCard } from '../../components/SkeletonCard';
 
 const { width } = Dimensions.get('window');
 const COLUMN_COUNT = 2;
-const ITEM_WIDTH = (width - 48) / COLUMN_COUNT;
+const ITEM_WIDTH = (width - 64) / COLUMN_COUNT;
 
 const HistoryScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -99,12 +99,12 @@ const HistoryScreen: React.FC = () => {
 
         {loading && history.length === 0 ? (
           <View style={styles.listContent}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <View style={styles.loadingGrid}>
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <SkeletonCard 
-                  key={i} 
-                  width={ITEM_WIDTH} 
-                  height={ITEM_WIDTH * 1.2} 
+                <SkeletonCard
+                  key={i}
+                  width={ITEM_WIDTH}
+                  height={ITEM_WIDTH * 1.2}
                   borderRadius={16}
                   style={{ margin: 8 }}
                 />
@@ -152,8 +152,8 @@ const HistoryScreen: React.FC = () => {
         animationType="fade"
         onRequestClose={() => setSelectedItem(null)}
       >
-        <TouchableOpacity 
-          activeOpacity={1} 
+        <TouchableOpacity
+          activeOpacity={1}
           style={styles.modalBackdrop}
           onPress={() => setSelectedItem(null)}
         >
@@ -170,24 +170,24 @@ const HistoryScreen: React.FC = () => {
             </View>
 
             <View style={styles.modalImageContainer}>
-              <Image 
-                source={{ uri: selectedItem?.imageUrl }} 
-                style={styles.modalImage} 
+              <Image
+                source={{ uri: selectedItem?.imageUrl }}
+                style={styles.modalImage}
                 resizeMode="contain"
               />
             </View>
 
             <View style={[styles.modalFooter, { paddingBottom: insets.bottom + 20 }]}>
-              <TouchableOpacity 
-                style={styles.modalActionBtn} 
+              <TouchableOpacity
+                style={styles.modalActionBtn}
                 onPress={() => selectedItem && handleShare(selectedItem.imageUrl)}
               >
                 <Share2 color="#FFF" size={24} />
                 <Text style={styles.modalActionText}>Share</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={[styles.modalActionBtn, styles.modalDownloadBtn]} 
+              <TouchableOpacity
+                style={[styles.modalActionBtn, styles.modalDownloadBtn]}
                 onPress={() => selectedItem && handleDownload(selectedItem.imageUrl, selectedItem.styleId)}
               >
                 <Download color="#000" size={24} />
@@ -231,6 +231,11 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     paddingBottom: 40,
+  },
+  loadingGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
   },
   card: {
     width: ITEM_WIDTH,

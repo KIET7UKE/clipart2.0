@@ -113,6 +113,17 @@ export const StyleCard: React.FC<Props> = ({
 
   const insets = useSafeAreaInsets();
 
+  if (loading || (!result && result !== 'error')) {
+    return (
+      <SkeletonCard 
+        width={CARD_WIDTH} 
+        height={CARD_WIDTH * 1.35} 
+        borderRadius={20} 
+        style={{ marginBottom: 16 }}
+      />
+    );
+  }
+
   return (
     <Animated.View style={[styles.container, animatedShake]}>
       <View style={styles.header}>
@@ -120,20 +131,12 @@ export const StyleCard: React.FC<Props> = ({
       </View>
 
       <View style={styles.content}>
-        {loading ? (
-          <SkeletonPlaceholder 
-            backgroundColor="transparent" 
-            highlightColor="#333"
-            speed={1500}
-          >
-             <View style={{ width: '100%', height: '100%' }} />
-          </SkeletonPlaceholder>
-        ) : result === 'error' ? (
+        {result === 'error' ? (
           <AnimatedButton onPress={onRetry} style={styles.errorContainer}>
             <RotateCcw color={Colors.text} size={24} />
             <Text style={styles.errorText}>Retry</Text>
           </AnimatedButton>
-        ) : result ? (
+        ) : result && (
           <View style={styles.imageWrapper}>
             <TouchableOpacity 
               activeOpacity={0.9} 
@@ -158,10 +161,6 @@ export const StyleCard: React.FC<Props> = ({
                   <Share2 color="#FFF" size={16} />
                </TouchableOpacity>
             </View>
-          </View>
-        ) : (
-          <View style={styles.emptyContainer}>
-             <Text style={styles.waitingText}>Cooking...</Text>
           </View>
         )}
       </View>
@@ -304,8 +303,6 @@ const styles = StyleSheet.create({
 
   errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#131313' },
   errorText: { color: Colors.error, fontSize: 12, fontWeight: 'bold', marginTop: 8 },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#131313' },
-  waitingText: { color: Colors.textSecondary, fontSize: 11, fontWeight: '500' },
 
   // Modal Styles
   modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.98)' },
