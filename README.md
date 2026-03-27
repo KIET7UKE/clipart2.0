@@ -1,6 +1,22 @@
-# 🎨 Clipart AI — Multi-Style AI Clipart Generator
+<p align="center">
+  <img src="src/assets/icons/clipart-ai-logo.png" alt="Clipart AI Logo" width="480"/>
+</p>
 
-> Transform any photo into stunning clipart art using AI. Built with React Native + Node.js backend.
+<p align="center">
+  <img src="src/assets/icons/clipart_icon.png" alt="Clipart AI App Icon" width="100"/>
+</p>
+
+<p align="center">
+  <strong>Transform any photo into stunning clipart art using AI.</strong><br/>
+  Built with React Native + Node.js backend.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=flat-square&logo=android&logoColor=white"/>
+  <img src="https://img.shields.io/badge/React_Native-0.84-61DAFB?style=flat-square&logo=react&logoColor=white"/>
+  <img src="https://img.shields.io/badge/AI-FLUX.1--schnell-FF4500?style=flat-square&logo=huggingface&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Vision-Gemini_2.5_Flash-4285F4?style=flat-square&logo=google&logoColor=white"/>
+</p>
 
 ---
 
