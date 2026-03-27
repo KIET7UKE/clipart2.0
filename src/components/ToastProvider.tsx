@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { StyleSheet, View, Text, Dimensions, TouchableOpacity } from 'react-native';
 import Animated, {
   Layout,
@@ -7,6 +7,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react-native';
 import { Colors } from '../utils/theme/DesignSystem';
+import { setToastRef } from '../utils/toastBridge';
 
 const { width } = Dimensions.get('window');
 
@@ -27,7 +28,7 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const showToast = useCallback((message: string, type: ToastType = 'success') => {
+  const showToastLocal = useCallback((message: string, type: ToastType = 'success') => {
     const id = Math.random().toString(36).substring(7);
     setToasts((prev) => [...prev, { id, message, type }]);
 
@@ -37,12 +38,16 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, 4000);
   }, []);
 
+  useEffect(() => {
+    setToastRef(showToastLocal);
+  }, [showToastLocal]);
+
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={{ showToast: showToastLocal }}>
       {children}
       <View style={styles.toastContainer} pointerEvents="box-none">
         {toasts.map((toast) => (

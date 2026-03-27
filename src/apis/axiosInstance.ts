@@ -2,6 +2,8 @@ import axios from 'axios';
 import { getFromStore, setStore } from '../storage/device';
 import { KeyConstants } from '../storage/constant';
 
+import { showToast } from '../utils/toastBridge';
+
 // Create an Axios instance
 const axiosInstance = axios.create({
   // baseURL: "http://localhost:3000",
@@ -9,16 +11,35 @@ const axiosInstance = axios.create({
   baseURL: 'https://clipart-beta.vercel.app', // for debugging in android device via wifi
 });
 
-axios.interceptors.request.use(request => {
-  console.log('Starting Request', request);
-  return request;
-});
+// Response interceptor for global error handling
+axiosInstance.interceptors.response.use(
+  response => {
+    return response;
+  },
+  error => {
+    let errorMessage = 'Something went wrong';
 
-// Response interceptor
-axios.interceptors.response.use(response => {
-  console.log('Response:', response);
-  return response;
-});
+    if (error.response) {
+      // Server responded with an error (4xx, 5xx)
+      errorMessage = 
+        error.response.data?.message || 
+        error.response.data?.data?.message ||
+        error.response.data?.error ||
+        `Error: ${error.response.status}`;
+    } else if (error.request) {
+      // Request was made but no response received
+      errorMessage = 'Network error: Please check your internet connection';
+    } else {
+      // Something happened in setting up the request
+      errorMessage = error.message;
+    }
+
+    // Show top-level toast
+    showToast(errorMessage, 'error');
+
+    return Promise.reject(error);
+  }
+);
 
 let cachedToken: any = null;
 let cachedRefreshToken: any = null;
