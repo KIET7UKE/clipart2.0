@@ -18,7 +18,7 @@ export const useImagePicker = () => {
   const [image, setImage] = useState<PickedImage | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const processImage = async (asset: Asset) => {
+  const processImage = async (asset: Asset, isCamera: boolean = false) => {
     try {
       setLoading(true);
       
@@ -31,26 +31,30 @@ export const useImagePicker = () => {
 
       let currentUri = asset.uri!;
       const fileSize = asset.fileSize || 0;
-      const TWO_MB = 2 * 1024 * 1024;
+      const ONE_MB = 1 * 1024 * 1024;
 
-      // 2. Compress if > 2MB
-      if (fileSize > TWO_MB) {
+      // 2. Compress:
+      //    - Camera: ALWAYS compress (raw camera JPEGs are 10-25MB)
+      //    - Gallery: compress only if > 1MB
+      const shouldCompress = isCamera || fileSize > ONE_MB;
+
+      if (shouldCompress) {
         const resizedImage = await ImageResizer.createResizedImage(
           currentUri,
-          1024,
-          1024,
+          800,
+          800,
           'JPEG',
-          80,
+          70,
           0,
           undefined,
           false,
           { mode: 'contain', onlyScaleDown: true }
         );
         currentUri = resizedImage.uri;
+        console.log(`[ImagePicker] Compressed${isCamera ? ' camera' : ''} image → ${currentUri}`);
       }
 
-      // 3. Get Base64
-      // We use RNFS to read the file as base64 to ensure we have it even after resizing
+      // 3. Read as Base64
       const base64 = await RNFS.readFile(currentUri, 'base64');
       
       const picked: PickedImage = {
@@ -106,7 +110,8 @@ export const useImagePicker = () => {
       });
 
       if (result.assets && result.assets[0]) {
-        await processImage(result.assets[0]);
+        // isCamera = true → always compress
+        await processImage(result.assets[0], true);
       }
     } catch (err) {
       console.warn(err);

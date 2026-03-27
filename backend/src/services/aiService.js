@@ -7,7 +7,10 @@ const visionCache = new Map();
 /**
  * Get visual description from Gemini with caching and retry logic.
  */
-module.exports.getSubjectDescription = async (image) => {
+module.exports.getSubjectDescription = async (
+  image,
+  mimeType = 'image/jpeg',
+) => {
   const imageHash = image.substring(0, 100);
 
   if (visionCache.has(imageHash)) {
@@ -17,14 +20,17 @@ module.exports.getSubjectDescription = async (image) => {
 
   console.log(`[aiService] Requesting Gemini description...`);
   const geminiTask = (async () => {
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${config.GEMINI_API_KEY}`;
-    
+    // Use gemini-1.5-flash-latest: stable model, generous free tier, no 403s on camera images
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${config.GEMINI_API_KEY}`;
+
     const geminiPayload = {
       contents: [
         {
           parts: [
-            { text: 'Describe the main subject in 5 words maximum (e.g., boy in red hat). Only output the description.' },
-            { inline_data: { mime_type: 'image/jpeg', data: image } },
+            {
+              text: 'Describe the main subject in 5 words maximum (e.g., boy in red hat). Only output the description.',
+            },
+            { inline_data: { mime_type: mimeType, data: image } },
           ],
         },
       ],
@@ -39,14 +45,26 @@ module.exports.getSubjectDescription = async (image) => {
           headers: { 'Content-Type': 'application/json' },
         });
 
-        if (!response.data || !response.data.candidates || response.data.candidates.length === 0) {
+        if (
+          !response.data ||
+          !response.data.candidates ||
+          response.data.candidates.length === 0
+        ) {
           throw new Error('Gemini API returned an empty response.');
         }
 
-        return response.data.candidates[0].content.parts[0].text.trim().replace(/[.,;]$/, '');
+        return response.data.candidates[0].content.parts[0].text
+          .trim()
+          .replace(/[.,;]$/, '');
       } catch (err) {
-        if (err.response && err.response.status === 429 && attempt < MAX_RETRIES) {
-          console.warn(`[aiService] Gemini 429! Retry ${attempt}/${MAX_RETRIES} in ${delay}ms...`);
+        if (
+          err.response &&
+          err.response.status === 429 &&
+          attempt < MAX_RETRIES
+        ) {
+          console.warn(
+            `[aiService] Gemini 429! Retry ${attempt}/${MAX_RETRIES} in ${delay}ms...`,
+          );
           await new Promise(r => setTimeout(r, delay));
           delay *= 2;
           continue;
@@ -57,12 +75,13 @@ module.exports.getSubjectDescription = async (image) => {
   })();
 
   visionCache.set(imageHash, geminiTask);
-  
+
   try {
     const description = await geminiTask;
     // Cache cleanup after 15 mins
     setTimeout(() => {
-      if (visionCache.get(imageHash) === geminiTask) visionCache.delete(imageHash);
+      if (visionCache.get(imageHash) === geminiTask)
+        visionCache.delete(imageHash);
     }, 15 * 60 * 1000);
     return description;
   } catch (err) {
@@ -88,7 +107,7 @@ function acquireHfSlot() {
     hfInFlight++;
     return Promise.resolve();
   }
-  return new Promise((resolve) => hfQueue.push({ resolve }));
+  return new Promise(resolve => hfQueue.push({ resolve }));
 }
 
 function releaseHfSlot() {
@@ -101,7 +120,7 @@ function releaseHfSlot() {
  * Retries up to 4 times with exponential backoff on 429 responses,
  * and respects the Retry-After header when present.
  */
-module.exports.generateClipart = async (finalPrompt) => {
+module.exports.generateClipart = async finalPrompt => {
   const MAX_RETRIES = 4;
   let delay = 3000; // start at 3s
 
@@ -110,7 +129,9 @@ module.exports.generateClipart = async (finalPrompt) => {
     await acquireHfSlot();
 
     try {
-      console.log(`[aiService] HF generation attempt ${attempt}/${MAX_RETRIES}...`);
+      console.log(
+        `[aiService] HF generation attempt ${attempt}/${MAX_RETRIES}...`,
+      );
       const response = await axios.post(
         'https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell',
         { inputs: finalPrompt },
@@ -129,7 +150,6 @@ module.exports.generateClipart = async (finalPrompt) => {
       const contentType = response.headers['content-type'] || 'image/png';
       const base64Image = Buffer.from(response.data).toString('base64');
       return `data:${contentType};base64,${base64Image}`;
-
     } catch (err) {
       releaseHfSlot();
 
@@ -145,9 +165,9 @@ module.exports.generateClipart = async (finalPrompt) => {
           : delay;
 
         console.warn(
-          `[aiService] HuggingFace ${status}! Retry ${attempt}/${MAX_RETRIES} in ${waitMs}ms...`
+          `[aiService] HuggingFace ${status}! Retry ${attempt}/${MAX_RETRIES} in ${waitMs}ms...`,
         );
-        await new Promise((r) => setTimeout(r, waitMs));
+        await new Promise(r => setTimeout(r, waitMs));
         delay *= 2; // exponential backoff for next iteration
         continue;
       }

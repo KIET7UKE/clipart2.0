@@ -21,8 +21,8 @@ axiosInstance.interceptors.response.use(
 
     if (error.response) {
       // Server responded with an error (4xx, 5xx)
-      errorMessage = 
-        error.response.data?.message || 
+      errorMessage =
+        error.response.data?.message ||
         error.response.data?.data?.message ||
         error.response.data?.error ||
         `Error: ${error.response.status}`;
@@ -38,7 +38,7 @@ axiosInstance.interceptors.response.use(
     showToast(errorMessage, 'error');
 
     return Promise.reject(error);
-  }
+  },
 );
 
 let cachedToken: any = null;

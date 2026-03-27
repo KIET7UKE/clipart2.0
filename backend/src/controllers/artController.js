@@ -8,8 +8,12 @@ const Clipart = require('../models/Clipart');
 module.exports.generate = async (req, res) => {
   let { image, styleId, customPrompt, styleIntensity, userId } = req.body;
 
-  // 1. Cleanup base64 image
+  // 1. Extract MIME type and strip data URI prefix
+  let mimeType = 'image/jpeg'; // safe default
   if (image && image.includes('base64,')) {
+    // e.g. "data:image/png;base64,ABC123" → mimeType='image/png', image='ABC123'
+    const match = image.match(/^data:([^;]+);base64,/);
+    if (match) mimeType = match[1];
     image = image.split('base64,')[1];
   }
 
@@ -26,7 +30,7 @@ module.exports.generate = async (req, res) => {
     console.log(`[artController] styleId=${styleId} | Starting generation for subject...`);
 
     // 1. Get visual description from AI Service
-    const subjectDescription = await aiService.getSubjectDescription(image);
+    const subjectDescription = await aiService.getSubjectDescription(image, mimeType);
     console.log(`[artController] Visual Description: ${subjectDescription}`);
 
     // 2. Prepare final prompt
